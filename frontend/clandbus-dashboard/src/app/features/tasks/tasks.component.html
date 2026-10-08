@@ -63,7 +63,7 @@
         <span>DISTRIBUCIÓN DEL PERIODO</span>
         <h2>Composición de tareas</h2>
         <p>Qué tipo de trabajo concentró más actividad en {{ periodLabel() }}.</p>
-        <div class="top-category" *ngIf="topCategory(visible) as top">
+        <div class="top-category" *ngIf="topCategory(visible) as top" [style.--category-color]="top.color" [style.--category-soft]="top.soft">
           <small>Mayor concentración</small><strong>{{ top.name }}</strong
           ><b>{{ top.percentage }}% del total</b>
         </div>
@@ -93,6 +93,8 @@
     <article
       class="task-card"
       *ngFor="let task of displayedTasks(visible)"
+      [style.--category-color]="categoryVisual(task.category).color"
+      [style.--category-soft]="categoryVisual(task.category).soft"
       [class.complete]="task.completionPercent >= 100"
       [class.overdue]="overdue(task)"
       (click)="selectedTask = task"
@@ -138,7 +140,7 @@
   </ng-container>
 </section>
 <div class="metric-modal-backdrop" *ngIf="selectedTask" (click)="selectedTask = null">
-  <section class="metric-modal task-detail-modal" (click)="$event.stopPropagation()">
+  <section class="metric-modal task-detail-modal" (click)="$event.stopPropagation()" [style.--category-color]="categoryVisual(selectedTask.category).color" [style.--category-soft]="categoryVisual(selectedTask.category).soft">
     <button class="metric-close" (click)="selectedTask = null">×</button
     ><span class="eyebrow">DETALLE DE LA TAREA</span>
     <h2>{{ selectedTask.summary || 'Tarea sin descripción' }}</h2>

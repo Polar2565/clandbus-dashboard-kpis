@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { DashboardDataService } from '../../core/services/dashboard-data.service';
+import { categoryVisual } from '../../core/utils/category.utils';
 @Component({
   selector: 'app-tasks',
   standalone: true,
@@ -18,16 +19,7 @@ export class TasksComponent {
   message = '';
   isError = false;
   period: 'day' | 'week' | 'month' | 'year' | 'history' = 'week';
-  private readonly categoryColors = [
-    '#087eaa',
-    '#2b946f',
-    '#bd8127',
-    '#6d7f91',
-    '#765f9e',
-    '#b75d62',
-    '#3f7b89',
-    '#8b704a',
-  ];
+  readonly categoryVisual = categoryVisual;
 
   overdue(t: any) {
     return (
@@ -165,11 +157,12 @@ export class TasksComponent {
     }
     return [...totals.entries()]
       .sort((a, b) => b[1] - a[1])
-      .map(([name, count], index) => ({
+      .map(([name, count]) => ({
         name,
         count,
         percentage: items.length ? Math.round((count / items.length) * 100) : 0,
-        color: this.categoryColors[index % this.categoryColors.length],
+        color: categoryVisual(name).color,
+        soft: categoryVisual(name).soft,
       }));
   }
   pieGradient(items: any[]) {
