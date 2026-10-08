@@ -47,8 +47,6 @@ ClandbusDashboard/
 ├── backend/ClandbusERPIntegration/  API, integración y persistencia
 ├── frontend/clandbus-dashboard/     Aplicación Angular
 ├── sql/                              Migración, rollback y mantenimiento
-├── AUDITORIA_PROYECTO_KPIs.md        Auditoría técnica
-├── IMPLEMENTACION_MEJORAS_KPIS.md    Cambios y pruebas
 ├── CONTRIBUTING.md                    Flujo de contribución
 ├── SECURITY.md                       Seguridad
 └── README.md                         Guía principal
@@ -218,9 +216,8 @@ La suite actual contiene 9 pruebas Angular. La sincronización real requiere una
 
 - [Backend](backend/ClandbusERPIntegration/README.md)
 - [Frontend](frontend/clandbus-dashboard/README.md)
-- [Auditoría](AUDITORIA_PROYECTO_KPIs.md)
-- [Implementación y pruebas](IMPLEMENTACION_MEJORAS_KPIS.md)
 - [Seguridad](SECURITY.md)
+- [Contribución](CONTRIBUTING.md)
 
 ## Repositorio
 
