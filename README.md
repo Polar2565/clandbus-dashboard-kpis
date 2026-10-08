@@ -4,7 +4,7 @@ Aplicación web independiente para consultar y analizar el trabajo personal regi
 
 > El repositorio no contiene la URL privada del ERP, credenciales, archivos Excel reales ni datos de clientes. Cada instalación debe aportar su propia configuración local.
 
-## Funcionalidades
+## Qué hace y para qué sirve
 
 - Inicio y cierre de sesión contra Acumatica sin guardar la contraseña.
 - Sesiones aisladas por navegador mediante cookie HTTP-only.
@@ -47,7 +47,6 @@ ClandbusDashboard/
 ├── backend/ClandbusERPIntegration/  API, integración y persistencia
 ├── frontend/clandbus-dashboard/     Aplicación Angular
 ├── sql/                              Migración, rollback y mantenimiento
-├── CONTRIBUTING.md                    Flujo de contribución
 ├── SECURITY.md                       Seguridad
 └── README.md                         Guía principal
 ```
@@ -66,7 +65,7 @@ git clone --branch desarrollo --single-branch https://github.com/Polar2565/cland
 cd clandbus-dashboard-kpis
 ```
 
-Las reglas completas están en [CONTRIBUTING.md](CONTRIBUTING.md). Nunca incluyas configuraciones locales, URLs privadas, credenciales, cookies, archivos Excel reales o datos de clientes en commits, ramas, Issues o Pull Requests.
+Nunca incluyas configuraciones locales, URLs privadas, credenciales, cookies, archivos Excel reales o datos de clientes en commits, ramas, Issues o Pull Requests. Las reglas automáticas de GitHub mantienen protegida la rama `main`.
 
 ## Requisitos mínimos
 
@@ -203,7 +202,7 @@ La suite actual contiene 9 pruebas Angular. La sincronización real requiere una
 - Los endpoints privados requieren una sesión backend válida.
 - Snapshots y registros profesionales se consultan por `UserKey`.
 - Reiniciar la API obliga a iniciar sesión nuevamente.
-- Antes de publicar revisa `git status`, `.gitignore`, [SECURITY.md](SECURITY.md) y la lista de seguridad de [CONTRIBUTING.md](CONTRIBUTING.md).
+- Antes de publicar revisa `git status`, `.gitignore` y [SECURITY.md](SECURITY.md).
 
 ## Limitaciones
 
@@ -217,7 +216,6 @@ La suite actual contiene 9 pruebas Angular. La sincronización real requiere una
 - [Backend](backend/ClandbusERPIntegration/README.md)
 - [Frontend](frontend/clandbus-dashboard/README.md)
 - [Seguridad](SECURITY.md)
-- [Contribución](CONTRIBUTING.md)
 
 ## Repositorio
 
