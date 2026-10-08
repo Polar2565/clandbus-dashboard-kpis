@@ -1,0 +1,172 @@
+<section class="page-head">
+  <div>
+    <span class="eyebrow">SEGUIMIENTO</span>
+    <h1>Casos</h1>
+    <p>Tu bandeja de soporte, filtrada para la cuenta que inició sesión.</p>
+  </div>
+</section>
+<ng-container *ngIf="cases$ | async as cases">
+  <section class="case-controls">
+    <div>
+      <span>VENTANA DE MEDICIÓN</span><strong>{{ periodLabel() | titlecase }}</strong
+      ><small>Se analizan los casos con creación o actividad de correo en el periodo.</small>
+    </div>
+    <div class="period-switch">
+      <button [class.active]="period === 'day'" (click)="selectPeriod('day')">Día</button
+      ><button [class.active]="period === 'week'" (click)="selectPeriod('week')">Semana</button
+      ><button [class.active]="period === 'month'" (click)="selectPeriod('month')">Mes</button
+      ><button [class.active]="period === 'year'" (click)="selectPeriod('year')">Año</button
+      ><button [class.active]="period === 'history'" (click)="selectPeriod('history')">
+        Histórico
+      </button>
+    </div>
+  </section>
+  <ng-container *ngIf="periodCases(cases) as visible">
+    <section class="case-kpis">
+      <article class="primary">
+        <span>Casos con actividad</span><strong>{{ visible.length }}</strong
+        ><small>En {{ periodLabel() }}</small>
+      </article>
+      <article>
+        <span>Carga activa</span><strong>{{ active(visible) }}</strong
+        ><small>Nuevo, abierto o esperando cliente</small>
+      </article>
+      <article>
+        <span>Esperando cliente</span><strong>{{ countStatus(visible, 'P') }}</strong
+        ><small>Sin acción inmediata</small>
+      </article>
+      <article>
+        <span>Cerrados</span><strong>{{ countStatus(visible, 'C') }}</strong
+        ><small>Estado actual de los casos del periodo</small>
+      </article>
+    </section>
+    <section class="case-distribution">
+      <div class="distribution-copy">
+        <span>DISTRIBUCIÓN DEL PERIODO</span>
+        <h2>Casos por estado</h2>
+        <p>Situación actual de los casos con actividad en {{ periodLabel() }}.</p>
+        <div class="reply-note">
+          <strong>{{ noReply(visible) }}</strong
+          ><span>sin respuesta saliente registrada</span>
+        </div>
+      </div>
+      <div class="case-pie" [style.background]="pieGradient(visible)">
+        <div>
+          <strong>{{ visible.length }}</strong
+          ><span>casos</span>
+        </div>
+      </div>
+      <div class="case-legend">
+        <article *ngFor="let item of statusDistribution(visible)">
+          <i [style.background]="item.color"></i><span>{{ item.label }}</span
+          ><strong>{{ item.percentage }}%</strong><small>{{ item.count }} casos</small>
+        </article>
+        <p *ngIf="visible.length === 0">No hay casos con actividad en este periodo.</p>
+      </div>
+    </section>
+    <section class="panel table-panel">
+      <div class="toolbar">
+        <div class="search">
+          <span>⌕</span><input [(ngModel)]="search" placeholder="Buscar caso, asunto o cliente" />
+        </div>
+        <select [(ngModel)]="status">
+          <option>Todos</option>
+          <option value="N">Nuevo</option>
+          <option value="O">Abierto</option>
+          <option value="P">Esperando cliente</option>
+          <option value="C">Cerrado</option></select
+        ><span class="result-count">{{ filtered(cases).length }} resultados</span>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Caso</th>
+              <th>Asunto / cliente</th>
+              <th>Estado</th>
+              <th>Antigüedad</th>
+              <th>Última respuesta</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of filtered(cases)" (click)="selected = item">
+              <td>
+                <b class="case-id">{{ item.caseNumber }}</b>
+              </td>
+              <td>
+                <strong>{{ item.subject || 'Sin asunto' }}</strong
+                ><small>{{ item.customer || 'Sin cliente' }}</small>
+              </td>
+              <td>
+                <span class="status-pill" [attr.data-status]="statusKey(item.status)">{{
+                  statusLabel(item.status)
+                }}</span>
+              </td>
+              <td>{{ age(item) }}</td>
+              <td>
+                {{
+                  item.lastOutgoingAt
+                    ? (item.lastOutgoingAt | date: 'd MMM, HH:mm')
+                    : 'Sin respuesta'
+                }}
+              </td>
+              <td><button class="detail-button">Ver actividad</button></td>
+            </tr>
+            <tr *ngIf="filtered(cases).length === 0">
+              <td colspan="5" class="empty">No hay casos que coincidan con este filtro.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </ng-container>
+</ng-container>
+<div class="case-modal-backdrop" *ngIf="selected" (click)="selected = null">
+  <section class="case-modal" (click)="$event.stopPropagation()">
+    <button class="modal-close" (click)="selected = null">×</button
+    ><span class="eyebrow">CASO {{ selected.caseNumber }}</span>
+    <h2>{{ selected.subject || 'Sin asunto' }}</h2>
+    <p class="customer">{{ selected.customer || 'Sin cliente' }}</p>
+    <div class="case-meta">
+      <div>
+        <span>Estado</span><strong>{{ statusLabel(selected.status) }}</strong>
+      </div>
+      <div>
+        <span>Categoría</span><strong>{{ selected.category || 'Sin categoría' }}</strong>
+      </div>
+      <div>
+        <span>Responsable</span><strong>{{ selected.owner || 'Sin responsable' }}</strong>
+      </div>
+      <div>
+        <span>Resolución</span><strong>{{ selected.reason || 'Sin resolución' }}</strong>
+      </div>
+    </div>
+    <div class="activity-title">
+      <span>ACTIVIDAD DE CORREO</span>
+      <h3>Últimos movimientos disponibles</h3>
+    </div>
+    <div class="mail-timeline">
+      <div>
+        <i class="incoming"></i><span>Correo recibido</span
+        ><strong>{{
+          selected.lastIncomingAt
+            ? (selected.lastIncomingAt | date: 'd MMM y, HH:mm')
+            : 'Sin registro'
+        }}</strong>
+      </div>
+      <div>
+        <i class="outgoing"></i><span>Respuesta enviada</span
+        ><strong>{{
+          selected.lastOutgoingAt
+            ? (selected.lastOutgoingAt | date: 'd MMM y, HH:mm')
+            : 'Sin respuesta registrada'
+        }}</strong>
+      </div>
+    </div>
+    <p class="history-note">
+      El contenido completo y todos los mensajes se mostrarán cuando Acumatica publique el endpoint
+      de correos.
+    </p>
+  </section>
+</div>

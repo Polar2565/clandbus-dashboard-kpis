@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36603.0 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClandbusERPIntegration", "ClandbusERPIntegration\ClandbusERPIntegration.csproj", "{EA40ED85-1F0A-47E6-ACC1-375C1F794774}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EA40ED85-1F0A-47E6-ACC1-375C1F794774}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA40ED85-1F0A-47E6-ACC1-375C1F794774}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA40ED85-1F0A-47E6-ACC1-375C1F794774}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA40ED85-1F0A-47E6-ACC1-375C1F794774}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8958293E-422B-4D89-958E-79D93A3641B9}
+	EndGlobalSection
+EndGlobal

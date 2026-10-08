@@ -1,0 +1,41 @@
+<app-login *ngIf="showLogin" (close)="showLogin = false" (loginSuccess)="loginSuccess($event)"></app-login>
+<app-toast-notification *ngIf="notification$ | async as notice" [visible]="true" [message]="notice.message" [type]="notice.type"></app-toast-notification>
+<div class="profile-modal-backdrop" *ngIf="profileOpen && (profile$ | async) as user" (click)="profileOpen=false"><section class="profile-modal" (click)="$event.stopPropagation()"><button class="profile-close" (click)="profileOpen=false">×</button><span class="user-avatar modal-avatar"><lucide-icon name="user-round"></lucide-icon></span><span class="eyebrow">MI CUENTA</span><h2>{{ user.displayName }}</h2><p>Sesión personal de Acumatica</p><div class="profile-modal-fields"><div><span>Usuario</span><strong>{{ user.username }}</strong></div><div *ngIf="user.ownerId"><span>Owner ID</span><strong>{{ user.ownerId }}</strong></div><div><span>Estado</span><strong class="account-online">Sesión activa</strong></div></div><button class="logout-button modal-logout" (click)="logout()"><lucide-icon name="log-out"></lucide-icon>Cerrar sesión</button></section></div>
+<div class="workspace" [class.sidebar-collapsed]="sidebarCollapsed">
+  <header class="topbar">
+    <div class="page-context"><span>GESTIÓN DE SOPORTE</span><strong>{{ pageTitle() }}</strong></div>
+    <div class="top-meta">
+      <div class="top-status"><span>{{ status$ | async }}</span></div>
+      <div class="session-state" [class.online]="connected$ | async"><i></i><span>{{ (connected$ | async) ? 'Sesión activa' : 'Sin conexión' }}</span></div>
+      <div class="top-actions"><button class="icon-button" *ngIf="connected$ | async" (click)="data.sync()" [disabled]="loading$ | async" title="Actualizar"><lucide-icon name="refresh-cw"></lucide-icon></button></div>
+    </div>
+  </header>
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <button class="brand-button" (click)="toggleSidebar()" [attr.aria-label]="sidebarCollapsed ? 'Expandir menú' : 'Contraer menú'"><img class="brand-mark" src="assets/clandbus-mark.png" alt="Clandbus"><span class="brand-copy"><strong>CLANDBUS</strong><small>Gestión de soporte</small></span></button>
+    </div>
+    <nav>
+      <p><span>OPERACIÓN</span></p>
+      <a routerLink="/resumen" routerLinkActive="active" title="Resumen"><lucide-icon name="layout-dashboard"></lucide-icon><b>Resumen</b></a>
+      <a routerLink="/casos" routerLinkActive="active" title="Casos"><lucide-icon name="headphones"></lucide-icon><b>Casos</b></a>
+      <a routerLink="/tasks" routerLinkActive="active" title="Tareas"><lucide-icon name="circle-check-big"></lucide-icon><b>Tareas</b></a>
+      <p><span>ANÁLISIS</span></p>
+      <a routerLink="/productividad" routerLinkActive="active" title="Productividad"><lucide-icon name="chart-no-axes-combined"></lucide-icon><b>Productividad</b></a>
+      <a routerLink="/integracion" routerLinkActive="active" title="Integración"><lucide-icon name="network"></lucide-icon><b>Integración</b></a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="user-card" *ngIf="profile$ | async as user" (click)="profileOpen = !profileOpen" [class.open]="profileOpen">
+        <span class="user-avatar"><lucide-icon name="user-round"></lucide-icon></span>
+        <span class="user-copy"><strong>{{ user.displayName }}</strong><small>{{ user.username }}</small></span>
+        <lucide-icon name="chevron-up"></lucide-icon>
+      </button>
+      <div class="login-panel" *ngIf="!(connected$ | async)">
+        <button (click)="showLogin = true" title="Iniciar sesión"><lucide-icon name="user-round"></lucide-icon><span>Iniciar sesión</span></button>
+      </div>
+    </div>
+  </aside>
+  <main class="content">
+    <router-outlet *ngIf="connected$ | async; else sessionRequired"></router-outlet>
+    <ng-template #sessionRequired><section class="session-required"><span class="eyebrow">ACCESO PERSONAL</span><h1>Inicia sesión para continuar</h1><p>Los casos, tareas y métricas se mostrarán después de validar tu cuenta de Acumatica.</p><button (click)="showLogin = true"><lucide-icon name="log-in"></lucide-icon>Iniciar sesión</button></section></ng-template>
+  </main>
+</div>

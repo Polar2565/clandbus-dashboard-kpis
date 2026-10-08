@@ -1,0 +1,117 @@
+<div class="login-overlay">
+
+  <div class="login-card">
+
+    <!-- ======================================
+         CLOSE BUTTON
+    ======================================= -->
+
+    <button
+      class="close-login-btn"
+      (click)="closeModal()">
+
+      ×
+
+    </button>
+
+    <!-- ======================================
+         HEADER
+    ======================================= -->
+
+    <div class="login-header">
+
+      <div class="login-badge">
+        ERP ACCESS
+      </div>
+
+      <h2>
+        Conectar con Acumatica ERP
+      </h2>
+
+      <p>
+        Ingresa tus credenciales para
+        acceder al dashboard empresarial.
+      </p>
+
+    </div>
+
+    <!-- ======================================
+         BODY
+    ======================================= -->
+
+    <div class="login-body">
+
+      <!-- USERNAME -->
+
+      <div class="login-group">
+
+        <label>
+          Usuario
+        </label>
+
+        <input
+          type="text"
+          [(ngModel)]="erpUsername"
+          placeholder="Ingresa tu usuario ERP">
+
+      </div>
+
+      <!-- PASSWORD -->
+
+      <div class="login-group">
+
+        <label>
+          Contraseña
+        </label>
+
+        <input
+          type="password"
+          [(ngModel)]="erpPassword"
+          placeholder="Ingresa tu contraseña">
+
+      </div>
+
+      <!-- ERROR -->
+
+      <div
+        class="login-error"
+        *ngIf="loginError">
+
+        {{ loginError }}
+
+      </div>
+
+    </div>
+
+    <!-- ======================================
+         ACTIONS
+    ======================================= -->
+
+    <div class="login-actions">
+
+      <button
+        class="cancel-btn"
+        (click)="closeModal()">
+
+        Cancelar
+
+      </button>
+
+      <button
+        class="login-btn"
+        (click)="connectERP()"
+        [disabled]="isLoading">
+
+        {{
+          isLoading
+            ? 'Conectando...'
+            : 'Iniciar Sesión'
+        }}
+
+      </button>
+
+    </div>
+
+  </div>
+
+</div>

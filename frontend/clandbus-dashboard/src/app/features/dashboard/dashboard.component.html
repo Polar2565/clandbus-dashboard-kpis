@@ -1,0 +1,52 @@
+<ng-container *ngIf="summary$ | async as s">
+  <section class="page-head"><div><span class="eyebrow">CENTRO DE CONTROL</span><h1>Resumen operativo</h1><p>Lo importante de tu carga de trabajo, sin ruido.</p></div><div class="date-chip">Hoy · {{ today | date:'d MMMM':'':'es-MX' }}</div></section>
+
+  <section class="kpi-grid">
+    <article class="kpi accent"><div class="kpi-icon"><lucide-icon name="headphones"></lucide-icon></div><div><span>Casos activos</span><strong>{{ s.activeCases }}</strong><small>{{ s.openCases }} requieren atención</small></div></article>
+    <article class="kpi"><div class="kpi-icon amber"><lucide-icon name="hourglass"></lucide-icon></div><div><span>Esperando cliente</span><strong>{{ s.pendingCustomerCases }}</strong><small>Sin acción inmediata</small></div></article>
+    <article class="kpi"><div class="kpi-icon violet"><lucide-icon name="circle-check-big"></lucide-icon></div><div><span>Tareas pendientes</span><strong>{{ pendingTasks(data.tasks$.value).length }}</strong><small>Excluye tareas canceladas</small></div></article>
+    <article class="kpi risk"><div class="kpi-icon green"><lucide-icon name="triangle-alert"></lucide-icon></div><div><span>Tareas vencidas</span><strong>{{ overduePending(data.tasks$.value).length }}</strong><small>Requieren atención inmediata</small></div></article>
+  </section>
+  <section class="number-strip" *ngIf="tasks$ | async as tasks"><article><span>Tareas registradas</span><strong>{{ tasks.length }}</strong><small>Histórico disponible</small></article><button (click)="selectedCategory='migr'"><span>Migraciones</span><strong>{{ migrations(tasks) }}</strong><small>Ver cuáles son →</small></button><button (click)="selectedCategory='soporte'"><span>Soporte</span><strong>{{ support(tasks) }}</strong><small>Ver cuáles son →</small></button><button (click)="selectedCategory='cert'"><span>Certificaciones</span><strong>{{ certifications(tasks) }}</strong><small>Ver cuáles son →</small></button></section>
+  <section class="executive-pulse" *ngIf="tasks$ | async as tasks">
+    <div class="pulse-title"><span>LECTURA EJECUTIVA</span><strong>Qué atender ahora</strong></div>
+    <button (click)="selectedInsight='overdue'" [disabled]="!overduePending(tasks).length"><i class="risk-dot"></i><div><span>Prioridad inmediata</span><strong>{{ overduePending(tasks).length }} tareas vencidas</strong><small>{{ overduePending(tasks).length ? 'Presiona para ver cuáles son →' : 'No hay atrasos pendientes' }}</small></div></button>
+    <button *ngIf="topPendingCategory(tasks) as top" (click)="selectedInsight='load'"><i class="load-dot"></i><div><span>Carga dominante pendiente</span><strong>{{ top.name }}</strong><small>{{ top.count }} de {{ pendingTasks(tasks).length }} · Ver tareas →</small></div></button>
+    <button *ngIf="nextDue(tasks) as next; else noDue" (click)="selectedInsight='urgent'"><i class="date-dot"></i><div><span>Compromiso más urgente</span><strong>{{ next.dueAt | date:'d MMM y' }}</strong><small>{{ next.summary }} →</small></div></button>
+    <ng-template #noDue><article><i class="date-dot"></i><div><span>Compromiso más urgente</span><strong>Sin fecha pendiente</strong><small>No existen compromisos por vencer</small></div></article></ng-template>
+  </section>
+
+  <section class="overview-grid">
+    <article class="panel case-health">
+      <div class="panel-title"><div><span>CARGA ACTIVA</span><h2>Estado de la bandeja</h2></div><a routerLink="/casos">Ver casos →</a></div>
+      <div class="donut-wrap">
+        <svg viewBox="0 0 42 42" class="donut"><circle class="donut-base" cx="21" cy="21" r="15.9"></circle><circle class="donut-open" cx="21" cy="21" r="15.9" [attr.stroke-dasharray]="circumference(s.openCases, s.activeCases)"></circle></svg>
+        <div class="donut-number"><strong>{{ s.activeCases }}</strong><span>activos</span></div>
+        <div class="legend"><div><i class="blue"></i><span>Abiertos y en atención</span><b>{{ s.openCases }}</b></div><div><i class="amber-dot"></i><span>Esperando respuesta del cliente</span><b>{{ s.pendingCustomerCases }}</b></div><div><i class="neutral-dot"></i><span>Otros activos</span><b>{{ s.activeCases-s.openCases-s.pendingCustomerCases }}</b></div></div>
+      </div>
+      <p class="closed-note"><strong>{{ s.closedCases }}</strong> casos cerrados se conservan como histórico y no forman parte de la carga activa.</p>
+    </article>
+
+    <article class="panel focus-panel">
+      <div class="panel-title"><div><span>Prioridad de hoy</span><h2>Atención necesaria</h2></div></div>
+      <div class="focus-list" *ngIf="cases$ | async as cases">
+        <a routerLink="/casos" *ngFor="let item of cases | slice:0:4"><span class="case-code">{{ item.caseNumber || 'CASO' }}</span><div><strong>{{ item.subject || 'Sin asunto' }}</strong><small>{{ item.customer || 'Sin cliente' }}</small></div><b>›</b></a>
+        <div class="empty" *ngIf="cases.length === 0">Conecta el ERP para identificar los casos que requieren atención.</div>
+      </div>
+    </article>
+
+    <article class="panel task-progress">
+      <div class="panel-title"><div><span>TRABAJO PENDIENTE</span><h2>Próximas tareas a atender</h2></div><a routerLink="/tasks">Ver todas →</a></div>
+      <div class="progress-list" *ngIf="tasks$ | async as tasks">
+        <div *ngFor="let task of pendingTasks(tasks) | slice:0:5"><div class="progress-label"><span>{{ task.summary || 'Tarea sin nombre' }}</span><b>{{ task.completionPercent || 0 }}% · {{ task.dueAt ? (task.dueAt | date:'d MMM') : 'sin fecha' }}</b></div><div class="bar"><i [style.width.%]="task.completionPercent || 0"></i></div></div>
+        <div class="empty" *ngIf="pendingTasks(tasks).length === 0">No existen tareas pendientes.</div>
+      </div>
+    </article>
+  </section>
+</ng-container>
+<div class="category-modal-backdrop" *ngIf="selectedCategory && (tasks$ | async) as tasks" (click)="selectedCategory=''">
+  <section class="category-modal" (click)="$event.stopPropagation()"><button class="category-close" (click)="selectedCategory=''">×</button><span class="eyebrow">DETALLE DE TAREAS</span><h2>{{ categoryLabel() }}</h2><p>{{ categoryTasks(tasks,selectedCategory).length }} tareas registradas en esta categoría.</p><div class="category-list"><article *ngFor="let task of categoryTasks(tasks,selectedCategory)"><div><strong>{{ task.summary || 'Tarea sin descripción' }}</strong><small>{{ task.relatedCase || 'Sin caso relacionado' }}</small></div><span [class.done]="(task.completionPercent||0)>=100">{{ task.status || 'Sin estado' }} · {{ task.completionPercent || 0 }}%</span></article></div></section>
+</div>
+<div class="category-modal-backdrop" *ngIf="selectedInsight && (tasks$ | async) as tasks" (click)="selectedInsight=''">
+  <section class="category-modal" (click)="$event.stopPropagation()"><button class="category-close" (click)="selectedInsight=''">×</button><span class="eyebrow">LECTURA EJECUTIVA</span><h2>{{ insightTitle(tasks) }}</h2><p>{{ insightTasks(tasks).length }} tareas dentro de este indicador.</p><div class="category-list"><article *ngFor="let task of insightTasks(tasks)"><div><strong>{{ task.summary || 'Tarea sin descripción' }}</strong><small>{{ task.relatedCase || task.category || 'Sin relación' }} · Vence {{ task.dueAt ? (task.dueAt | date:'d MMM y') : 'sin fecha' }}</small></div><span>{{ task.status || 'Sin estado' }} · {{ task.completionPercent || 0 }}%</span></article></div></section>
+</div>

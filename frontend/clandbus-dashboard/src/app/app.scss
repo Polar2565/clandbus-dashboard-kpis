@@ -1,0 +1,601 @@
+.workspace {
+  min-height: 100vh;
+  --side-width: 224px;
+}
+.topbar {
+  position: fixed;
+  z-index: 30;
+  top: 0;
+  right: 0;
+  left: var(--side-width);
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 24px;
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(14px);
+  transition: left 0.22s;
+}
+.page-context {
+  min-width: 150px;
+  padding-right: 18px;
+  border-right: 1px solid var(--line);
+}
+.page-context span,
+.page-context strong {
+  display: block;
+}
+.page-context span {
+  color: var(--text-subtle);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+.page-context strong {
+  margin-top: 2px;
+  color: var(--ink);
+  font: 800 14px var(--font-display);
+}
+.top-meta {
+  min-width: 0;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.top-status {
+  max-width: 440px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.session-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.session-state i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.session-state.online {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.top-actions {
+  display: flex;
+}
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+}
+.icon-button:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+.icon-button:disabled {
+  opacity: 0.5;
+}
+.icon-button lucide-icon {
+  display: flex;
+  width: 18px;
+  height: 18px;
+}
+.sidebar {
+  position: fixed;
+  z-index: 40;
+  inset: 0 auto 0 0;
+  width: var(--side-width);
+  display: flex;
+  flex-direction: column;
+  padding: 0 10px 14px;
+  background: #0a2c4d;
+  color: #fff;
+  box-shadow: 8px 0 28px rgba(4, 27, 49, 0.08);
+  overflow: hidden;
+  transition: width 0.22s;
+}
+.sidebar-brand {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+.brand-button {
+  width: 100%;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+.brand-button:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.brand-mark {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  object-fit: contain;
+}
+.brand-copy strong,
+.brand-copy small {
+  display: block;
+  white-space: nowrap;
+}
+.brand-copy strong {
+  font: 800 12px var(--font-display);
+  letter-spacing: 0.1em;
+}
+.brand-copy small {
+  margin-top: 2px;
+  color: #82a8c5;
+  font-size: 8px;
+}
+.sidebar nav {
+  margin-top: 10px;
+}
+.sidebar nav p {
+  height: 18px;
+  margin: 12px 12px 6px;
+  color: #7194af;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+}
+.sidebar nav a {
+  position: relative;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 3px 0;
+  padding: 0 12px;
+  border-radius: 9px;
+  color: #aac0d1;
+  white-space: nowrap;
+  transition: 0.16s;
+}
+.sidebar nav a lucide-icon {
+  display: flex;
+  width: 19px;
+  height: 19px;
+  flex: 0 0 19px;
+}
+.sidebar nav a b {
+  font-size: 12px;
+  font-weight: 650;
+}
+.sidebar nav a:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+.sidebar nav a.active {
+  background: #0788c8;
+  color: #fff;
+  box-shadow: 0 7px 18px rgba(0, 120, 186, 0.28);
+}
+.sidebar nav a.active:before {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 3px;
+  height: 20px;
+  border-radius: 0 3px 3px 0;
+  background: #78dcff;
+}
+.sidebar-footer {
+  position: relative;
+  margin-top: auto;
+}
+.user-card {
+  width: 100%;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+.user-card:hover,
+.user-card.open {
+  background: rgba(255, 255, 255, 0.07);
+}
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #0b91cf;
+}
+.user-avatar lucide-icon {
+  display: flex;
+  width: 18px;
+  height: 18px;
+}
+.user-copy {
+  min-width: 0;
+  flex: 1;
+}
+.user-copy strong,
+.user-copy small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.user-copy strong {
+  font-size: 11px;
+}
+.user-copy small {
+  margin-top: 2px;
+  color: #8eafc7;
+  font-size: 8px;
+}
+.user-card > lucide-icon {
+  display: flex;
+  width: 14px;
+  height: 14px;
+  color: #86a5bc;
+}
+.login-panel button {
+  width: 100%;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #acc1d1;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.login-panel button:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+.login-panel lucide-icon {
+  display: flex;
+  width: 19px;
+  height: 19px;
+  color: #55c7ec;
+}
+.content {
+  max-width: 1680px;
+  margin-left: var(--side-width);
+  padding: 88px 28px 38px;
+  transition: margin-left 0.22s;
+}
+.sidebar-collapsed {
+  --side-width: 64px;
+}
+.sidebar-collapsed .brand-copy,
+.sidebar-collapsed .sidebar nav p span,
+.sidebar-collapsed .sidebar nav a b,
+.sidebar-collapsed .user-copy,
+.sidebar-collapsed .user-card > lucide-icon,
+.sidebar-collapsed .login-panel span {
+  display: none;
+}
+.sidebar-collapsed .brand-button,
+.sidebar-collapsed .sidebar nav a,
+.sidebar-collapsed .user-card,
+.sidebar-collapsed .login-panel button {
+  justify-content: center;
+  padding: 0;
+}
+.sidebar-collapsed .sidebar nav p {
+  margin-inline: 0;
+}
+.sidebar-collapsed .sidebar nav p:after {
+  content: '';
+  display: block;
+  width: 24px;
+  height: 1px;
+  margin: 8px auto;
+  background: rgba(136, 176, 204, 0.22);
+}
+.sidebar-collapsed .sidebar nav a {
+  width: 44px;
+  margin-inline: auto;
+}
+.sidebar-collapsed .sidebar nav a:hover:after {
+  content: attr(title);
+  position: absolute;
+  left: 52px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  background: #10283f;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  box-shadow: var(--shadow-lg);
+}
+.profile-modal-backdrop {
+  position: fixed;
+  z-index: 1200;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(4, 24, 42, 0.6);
+  backdrop-filter: blur(7px);
+}
+.profile-modal {
+  position: relative;
+  width: min(430px, 100%);
+  padding: 30px;
+  background: #fff;
+  border-radius: 18px;
+  text-align: center;
+  box-shadow: 0 30px 80px rgba(3, 20, 36, 0.38);
+}
+.profile-close {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 20px;
+  cursor: pointer;
+}
+.modal-avatar {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 14px;
+  border-radius: 15px;
+}
+.profile-modal h2 {
+  margin: 7px 0 3px;
+  font: 800 22px var(--font-display);
+}
+.profile-modal > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.profile-modal-fields {
+  display: grid;
+  gap: 8px;
+  margin: 22px 0;
+  text-align: left;
+}
+.profile-modal-fields div {
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+.profile-modal-fields span,
+.profile-modal-fields strong {
+  display: block;
+}
+.profile-modal-fields span {
+  color: var(--text-subtle);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.profile-modal-fields strong {
+  margin-top: 4px;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.account-online {
+  color: var(--success);
+}
+.logout-button {
+  width: 100%;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-weight: 800;
+  cursor: pointer;
+}
+.logout-button lucide-icon {
+  display: flex;
+  width: 16px;
+  height: 16px;
+}
+.session-required {
+  max-width: 520px;
+  margin: 15vh auto 0;
+  padding: 36px;
+  text-align: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+.session-required h1 {
+  margin: 8px 0;
+  font: 800 28px var(--font-display);
+}
+.session-required p {
+  margin: 0 auto 22px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.session-required button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+.session-required button lucide-icon {
+  display: flex;
+  width: 16px;
+  height: 16px;
+}
+@media (max-width: 900px) {
+  .workspace.sidebar-collapsed {
+    --side-width: 64px;
+  }
+  .workspace {
+    overflow-x: clip;
+  }
+  .sidebar-collapsed .brand-copy,
+  .sidebar-collapsed .sidebar nav p span,
+  .sidebar-collapsed .sidebar nav a b,
+  .sidebar-collapsed .user-copy,
+  .sidebar-collapsed .user-card > lucide-icon,
+  .sidebar-collapsed .login-panel span {
+    display: none;
+  }
+  .sidebar-collapsed .brand-button,
+  .sidebar-collapsed .sidebar nav a,
+  .sidebar-collapsed .user-card,
+  .sidebar-collapsed .login-panel button {
+    justify-content: center;
+    padding: 0;
+  }
+  .sidebar-collapsed .sidebar nav a {
+    width: 44px;
+    margin-inline: auto;
+  }
+  .sidebar-collapsed .sidebar nav p {
+    margin-inline: 0;
+  }
+  .sidebar-collapsed .sidebar nav p::after {
+    content: '';
+    display: block;
+    width: 24px;
+    height: 1px;
+    margin: 8px auto;
+    background: rgba(136, 176, 204, 0.22);
+  }
+  .top-status {
+    display: none;
+  }
+  .content {
+    min-width: 0;
+    padding-inline: 20px;
+  }
+}
+@media (max-width: 700px) {
+  .workspace.sidebar-collapsed {
+    --side-width: 60px;
+  }
+  .sidebar-collapsed .sidebar {
+    padding-inline: 8px;
+  }
+  .sidebar-collapsed .brand-copy,
+  .sidebar-collapsed .sidebar nav p span,
+  .sidebar-collapsed .sidebar nav a b,
+  .sidebar-collapsed .user-copy,
+  .sidebar-collapsed .user-card > lucide-icon,
+  .sidebar-collapsed .login-panel span {
+    display: none !important;
+  }
+  .sidebar-collapsed .brand-button,
+  .sidebar-collapsed .sidebar nav a,
+  .sidebar-collapsed .user-card,
+  .sidebar-collapsed .login-panel button {
+    justify-content: center !important;
+    padding: 0 !important;
+  }
+  .sidebar-collapsed .sidebar nav a {
+    width: 44px;
+    margin-inline: auto;
+  }
+  .sidebar-collapsed .sidebar nav p {
+    margin-inline: 0;
+  }
+  .sidebar-collapsed .sidebar nav p:after {
+    content: '';
+    display: block;
+    width: 22px;
+    height: 1px;
+    margin: 8px auto;
+    background: rgba(136, 176, 204, 0.22);
+  }
+  .topbar {
+    left: var(--side-width);
+    padding: 0 12px;
+  }
+  .page-context {
+    min-width: 0;
+    flex: 1;
+    padding: 0;
+    border: 0;
+  }
+  .page-context span {
+    display: none;
+  }
+  .top-meta {
+    margin-left: 0;
+  }
+  .session-state span {
+    display: none;
+  }
+  .session-state {
+    padding: 8px;
+  }
+  .top-actions {
+    display: none;
+  }
+  .content {
+    margin-left: 60px;
+    padding: 80px 12px 28px;
+  }
+  .profile-modal {
+    padding: 26px 20px;
+  }
+}

@@ -1,0 +1,35 @@
+<div
+  class="toast-container"
+  *ngIf="visible">
+
+  <div
+    class="toast"
+    [class.success]="type === 'success'"
+    [class.error]="type === 'error'"
+    [class.info]="type === 'info'">
+
+    <div class="toast-indicator"></div>
+
+    <div class="toast-content">
+
+      <span class="toast-title">
+
+        {{
+          type === 'success'
+            ? 'Operación exitosa'
+            : type === 'error'
+              ? 'Error del sistema'
+              : 'Información'
+        }}
+
+      </span>
+
+      <p>
+        {{ message }}
+      </p>
+
+    </div>
+
+  </div>
+
+</div>

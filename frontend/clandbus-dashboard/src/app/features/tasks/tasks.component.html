@@ -1,0 +1,209 @@
+<section class="page-head">
+  <div>
+    <span class="eyebrow">PLAN DE TRABAJO</span>
+    <h1>Tareas</h1>
+    <p>Migraciones, desarrollo, soporte y actividades ligadas a cada caso.</p>
+  </div>
+  <div class="import-area">
+    <button type="button" (click)="importLatest()" [disabled]="importing">
+      {{ importing ? 'Actualizando…' : 'Actualizar tareas' }}</button
+    ><small>Lee automáticamente el Excel más reciente.</small>
+  </div>
+</section>
+<section class="task-controls">
+  <div class="control-copy">
+    <span>VENTANA DE MEDICIÓN</span><strong>{{ periodLabel() | titlecase }}</strong
+    ><small>Los indicadores y el detalle responden al mismo periodo.</small>
+  </div>
+  <div class="period-switch">
+    <button [class.active]="period === 'day'" (click)="selectPeriod('day')">Día</button
+    ><button [class.active]="period === 'week'" (click)="selectPeriod('week')">Semana</button
+    ><button [class.active]="period === 'month'" (click)="selectPeriod('month')">Mes</button
+    ><button [class.active]="period === 'year'" (click)="selectPeriod('year')">Año</button
+    ><button [class.active]="period === 'history'" (click)="selectPeriod('history')">
+      Histórico
+    </button>
+  </div>
+</section>
+<section class="task-board" *ngIf="tasks$ | async as tasks">
+  <ng-container *ngIf="filtered(tasks) as visible">
+    <div class="task-kpis">
+      <article class="primary-kpi">
+        <span>Completadas</span><strong>{{ completed(visible) }}</strong
+        ><small *ngIf="period !== 'history'" [class.negative]="delta(tasks) < 0"
+          >{{ delta(tasks) >= 0 ? '+' : '' }}{{ delta(tasks) }} frente al periodo anterior</small
+        ><small *ngIf="period === 'history'">{{ visible.length }} tareas registradas</small>
+      </article>
+      <article>
+        <span>Tasa de finalización</span><strong>{{ completionRate(visible) }}%</strong
+        ><small>{{ visible.length - completed(visible) }} pendientes en el periodo</small>
+      </article>
+      <article>
+        <span>Tiempo medio de cierre</span
+        ><strong
+          >{{ averageCycleDays(visible) === null ? 'No disponible' : averageCycleDays(visible)
+          }}<em *ngIf="averageCycleDays(visible) !== null">d</em></strong
+        ><small>Desde inicio hasta conclusión</small>
+      </article>
+      <article
+        class="danger clickable-kpi"
+        [class.selected]="showOverdueOnly"
+        (click)="overdueCount(visible) && openOverdue(visible)"
+        [attr.tabindex]="overdueCount(visible) ? 0 : -1"
+        (keydown.enter)="overdueCount(visible) && openOverdue(visible)"
+      >
+        <span>Tareas vencidas</span><strong>{{ overdueCount(visible) }}</strong
+        ><small>{{
+          overdueCount(visible) ? 'Presiona para ver cuáles son →' : 'No hay tareas fuera de fecha'
+        }}</small>
+      </article>
+    </div>
+    <section class="category-insight">
+      <div class="category-copy">
+        <span>DISTRIBUCIÓN DEL PERIODO</span>
+        <h2>Composición de tareas</h2>
+        <p>Qué tipo de trabajo concentró más actividad en {{ periodLabel() }}.</p>
+        <div class="top-category" *ngIf="topCategory(visible) as top">
+          <small>Mayor concentración</small><strong>{{ top.name }}</strong
+          ><b>{{ top.percentage }}% del total</b>
+        </div>
+      </div>
+      <div class="pie-wrap">
+        <div class="pie-chart" [style.background]="pieGradient(visible)">
+          <div>
+            <strong>{{ visible.length }}</strong
+            ><span>tareas</span>
+          </div>
+        </div>
+      </div>
+      <div class="category-legend">
+        <article *ngFor="let item of categoryDistribution(visible)">
+          <i [style.background]="item.color"></i><span>{{ item.name }}</span
+          ><strong>{{ item.percentage }}%</strong><small>{{ item.count }} tareas</small>
+        </article>
+        <p class="no-category" *ngIf="visible.length === 0">
+          No hay tareas para representar en este periodo.
+        </p>
+      </div>
+    </section>
+    <div class="active-filter" *ngIf="showOverdueOnly">
+      <span>Mostrando {{ overdueCount(visible) }} tareas vencidas en {{ periodLabel() }}</span
+      ><button (click)="showOverdueOnly = false">Quitar filtro</button>
+    </div>
+    <article
+      class="task-card"
+      *ngFor="let task of displayedTasks(visible)"
+      [class.complete]="task.completionPercent >= 100"
+      [class.overdue]="overdue(task)"
+      (click)="selectedTask = task"
+      tabindex="0"
+      (keydown.enter)="selectedTask = task"
+    >
+      <div class="task-top">
+        <span class="category">{{ task.category || 'General' }}</span
+        ><span class="status">{{ task.status || 'Sin estado' }}</span>
+      </div>
+      <h3>{{ task.summary || 'Task sin descripción' }}</h3>
+      <dl class="task-detail">
+        <div>
+          <dt>Propietario</dt>
+          <dd>{{ task.owner || 'Sin propietario' }}</dd>
+        </div>
+        <div>
+          <dt>Inicio</dt>
+          <dd>{{ task.startAt ? (task.startAt | date: 'd MMM y') : 'Sin fecha' }}</dd>
+        </div>
+        <div>
+          <dt>Vencimiento</dt>
+          <dd>{{ task.dueAt ? (task.dueAt | date: 'd MMM y') : 'Sin fecha' }}</dd>
+        </div>
+        <div class="related">
+          <dt>Relacionado</dt>
+          <dd>{{ task.relatedCase || 'Sin entidad relacionada' }}</dd>
+        </div>
+      </dl>
+      <div class="task-foot">
+        <div class="bar"><i [style.width.%]="task.completionPercent || 0"></i></div>
+        <b>{{ task.completionPercent || 0 }}%</b>
+      </div>
+      <span class="warning" *ngIf="overdue(task)">Vencida</span>
+    </article>
+    <div class="panel empty period-empty" *ngIf="displayedTasks(visible).length === 0">
+      {{
+        showOverdueOnly
+          ? 'No hay tareas vencidas en este periodo.'
+          : 'No hay tareas registradas en ' + periodLabel() + '. Selecciona otro periodo.'
+      }}
+    </div>
+  </ng-container>
+</section>
+<div class="metric-modal-backdrop" *ngIf="selectedTask" (click)="selectedTask = null">
+  <section class="metric-modal task-detail-modal" (click)="$event.stopPropagation()">
+    <button class="metric-close" (click)="selectedTask = null">×</button
+    ><span class="eyebrow">DETALLE DE LA TAREA</span>
+    <h2>{{ selectedTask.summary || 'Tarea sin descripción' }}</h2>
+    <div class="detail-progress">
+      <span>Avance</span><strong>{{ selectedTask.completionPercent || 0 }}%</strong>
+      <div class="bar"><i [style.width.%]="selectedTask.completionPercent || 0"></i></div>
+    </div>
+    <div class="detail-grid">
+      <div>
+        <span>Estado</span><strong>{{ selectedTask.status || 'Sin estado' }}</strong>
+      </div>
+      <div>
+        <span>Categoría</span><strong>{{ selectedTask.category || 'General' }}</strong>
+      </div>
+      <div>
+        <span>Propietario</span><strong>{{ selectedTask.owner || 'Sin propietario' }}</strong>
+      </div>
+      <div>
+        <span>Inicio</span
+        ><strong>{{
+          selectedTask.startAt ? (selectedTask.startAt | date: 'd MMM y') : 'Sin fecha'
+        }}</strong>
+      </div>
+      <div>
+        <span>Vencimiento</span
+        ><strong>{{
+          selectedTask.dueAt ? (selectedTask.dueAt | date: 'd MMM y') : 'Sin fecha'
+        }}</strong>
+      </div>
+      <div>
+        <span>Finalización</span
+        ><strong>{{
+          selectedTask.completedAt ? (selectedTask.completedAt | date: 'd MMM y') : 'Pendiente'
+        }}</strong>
+      </div>
+      <div class="wide">
+        <span>Relacionado</span
+        ><strong>{{ selectedTask.relatedCase || 'Sin entidad relacionada' }}</strong>
+      </div>
+    </div>
+  </section>
+</div>
+<div
+  class="metric-modal-backdrop"
+  *ngIf="overdueModalTasks.length"
+  (click)="overdueModalTasks = []"
+>
+  <section class="metric-modal overdue-list-modal" (click)="$event.stopPropagation()">
+    <button class="metric-close" (click)="overdueModalTasks = []">×</button>
+    <span class="eyebrow">ATENCIÓN REQUERIDA</span>
+    <h2>Tareas vencidas</h2>
+    <p>{{ overdueModalTasks.length }} tareas pendientes fuera de su fecha compromiso.</p>
+    <button
+      class="overdue-row"
+      *ngFor="let task of overdueModalTasks"
+      (click)="selectedTask = task; overdueModalTasks = []"
+    >
+      <span
+        ><strong>{{ task.summary || 'Tarea sin descripción' }}</strong
+        ><small>{{ task.relatedCase || task.category || 'Sin relación' }}</small></span
+      >
+      <span
+        ><b>{{ task.completionPercent || 0 }}%</b
+        ><small>Venció {{ task.dueAt | date: 'd MMM y' }}</small></span
+      >
+    </button>
+  </section>
+</div>
