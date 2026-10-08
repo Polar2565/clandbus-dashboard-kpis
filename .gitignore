@@ -39,6 +39,22 @@ appsettings.json
 appsettings.Development.json
 appsettings.*.local.json
 .env
+.env.*
+!.env.example
+secrets.json
+*.pfx
+*.p12
+*.key
+
+# Exportaciones y bases locales con información operativa
+*.xlsx
+*.xls
+*.csv
+*.bak
+*.mdf
+*.ldf
+*.db
+*.sqlite
 
 # =========================
 # Logs

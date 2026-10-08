@@ -49,9 +49,26 @@ ClandbusDashboard/
 ├── sql/                              Migración, rollback y mantenimiento
 ├── AUDITORIA_PROYECTO_KPIs.md        Auditoría técnica
 ├── IMPLEMENTACION_MEJORAS_KPIS.md    Cambios y pruebas
+├── CONTRIBUTING.md                    Flujo de contribución
 ├── SECURITY.md                       Seguridad
 └── README.md                         Guía principal
 ```
+
+## Ramas y forma de trabajo
+
+| Rama | Propósito | Recomendación |
+| --- | --- | --- |
+| `main` | Versión estable y revisada | Integrar únicamente mediante Pull Request |
+| `desarrollo` | Pruebas, integración y validación | Usarla antes de promover cambios a `main` |
+
+Para descargar únicamente la versión de desarrollo:
+
+```powershell
+git clone --branch desarrollo --single-branch https://github.com/Polar2565/clandbus-dashboard-kpis.git
+cd clandbus-dashboard-kpis
+```
+
+Las reglas completas están en [CONTRIBUTING.md](CONTRIBUTING.md). Nunca incluyas configuraciones locales, URLs privadas, credenciales, cookies, archivos Excel reales o datos de clientes en commits, ramas, Issues o Pull Requests.
 
 ## Requisitos mínimos
 
@@ -182,11 +199,13 @@ La suite actual contiene 9 pruebas Angular. La sincronización real requiere una
 ## Seguridad
 
 - No publiques `appsettings.Development.json`, credenciales, cookies, exportaciones ni archivos reales de clientes.
+- La URL del ERP, el tenant, la sucursal y la cadena SQL se configuran exclusivamente en el archivo local ignorado por Git.
+- El frontend no contiene ni recibe la URL privada de Acumatica.
 - Las contraseñas no se almacenan en SQL ni en el código.
 - Los endpoints privados requieren una sesión backend válida.
 - Snapshots y registros profesionales se consultan por `UserKey`.
 - Reiniciar la API obliga a iniciar sesión nuevamente.
-- Antes de publicar revisa `git status`, `.gitignore` y `SECURITY.md`.
+- Antes de publicar revisa `git status`, `.gitignore`, [SECURITY.md](SECURITY.md) y la lista de seguridad de [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Limitaciones
 
