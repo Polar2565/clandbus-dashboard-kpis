@@ -49,3 +49,39 @@ app-dashboard .kpi,app-dashboard .number-strip>*{min-width:0}app-dashboard .kpi-
 app-cases .search:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px rgba(8,127,171,.1)}app-cases .toolbar select{min-width:170px;cursor:pointer}app-cases .table-scroll{scrollbar-width:thin;scrollbar-color:#b8c6d0 transparent}app-cases .table-scroll tbody tr:hover{background:#f4f9fb}app-cases .detail-button{cursor:pointer}
 app-tasks .task-kpis article,app-tasks .task-card,app-tasks .category-insight{border-radius:var(--radius-md)}app-tasks .category-insight,app-tasks .category-legend article{min-width:0}app-tasks .period-switch{scrollbar-width:none}app-tasks .period-switch::-webkit-scrollbar{display:none}
 @media(max-width:600px){app-dashboard .kpi-grid{grid-template-columns:1fr}app-dashboard .number-strip{grid-template-columns:1fr}app-cases .toolbar select{min-width:0;flex:1}app-cases .result-count{width:100%}app-cases .case-modal{padding:24px 18px}app-tasks .task-kpis{grid-template-columns:1fr}app-tasks .task-kpis article{min-height:108px}app-tasks .category-insight{padding:19px}}
+
+/* Motion system: subtle executive transitions shared by all dashboards. */
+app-dashboard,app-cases,app-tasks,app-productivity,app-integration{display:block;animation:pageReveal .42s cubic-bezier(.2,.75,.25,1) both}
+.page-head{animation:sectionReveal .4s .03s cubic-bezier(.2,.75,.25,1) both}
+app-dashboard .kpi-grid>* ,app-dashboard .number-strip>*,app-cases .case-kpis>*,app-tasks .task-kpis>*,app-productivity .score-row>*,app-productivity .report-grid>*{opacity:0;animation:cardReveal .48s cubic-bezier(.2,.75,.25,1) both}
+app-dashboard .kpi-grid>*:nth-child(1),app-dashboard .number-strip>*:nth-child(1),app-cases .case-kpis>*:nth-child(1),app-tasks .task-kpis>*:nth-child(1),app-productivity .score-row>*:nth-child(1),app-productivity .report-grid>*:nth-child(1){animation-delay:.08s}
+app-dashboard .kpi-grid>*:nth-child(2),app-dashboard .number-strip>*:nth-child(2),app-cases .case-kpis>*:nth-child(2),app-tasks .task-kpis>*:nth-child(2),app-productivity .score-row>*:nth-child(2),app-productivity .report-grid>*:nth-child(2){animation-delay:.14s}
+app-dashboard .kpi-grid>*:nth-child(3),app-dashboard .number-strip>*:nth-child(3),app-cases .case-kpis>*:nth-child(3),app-tasks .task-kpis>*:nth-child(3),app-productivity .score-row>*:nth-child(3),app-productivity .report-grid>*:nth-child(3){animation-delay:.2s}
+app-dashboard .kpi-grid>*:nth-child(4),app-dashboard .number-strip>*:nth-child(4),app-cases .case-kpis>*:nth-child(4),app-tasks .task-kpis>*:nth-child(4),app-productivity .score-row>*:nth-child(4),app-productivity .report-grid>*:nth-child(4){animation-delay:.26s}
+app-dashboard .overview-grid>*,app-dashboard .executive-pulse,app-cases .case-distribution,app-cases .table-panel,app-tasks .category-insight,app-productivity .insight,app-productivity .trend-panel,app-productivity .analytics-grid{animation:sectionReveal .5s .22s cubic-bezier(.2,.75,.25,1) both}
+app-dashboard .focus-list>a,app-dashboard .progress-list>div,app-cases tbody tr,app-tasks .task-card,app-tasks .category-legend article,app-productivity .result-list>div,app-productivity .record-card{animation:listReveal .38s ease-out both}
+app-dashboard .focus-list>a:nth-child(2),app-dashboard .progress-list>div:nth-child(2),app-cases tbody tr:nth-child(2),app-tasks .task-card:nth-of-type(2),app-tasks .category-legend article:nth-child(2),app-productivity .result-list>div:nth-child(2),app-productivity .record-card:nth-child(2){animation-delay:.045s}
+app-dashboard .focus-list>a:nth-child(3),app-dashboard .progress-list>div:nth-child(3),app-cases tbody tr:nth-child(3),app-tasks .task-card:nth-of-type(3),app-tasks .category-legend article:nth-child(3),app-productivity .result-list>div:nth-child(3),app-productivity .record-card:nth-child(3){animation-delay:.09s}
+app-dashboard .focus-list>a:nth-child(4),app-dashboard .progress-list>div:nth-child(4),app-cases tbody tr:nth-child(4),app-tasks .task-card:nth-of-type(4),app-tasks .category-legend article:nth-child(4),app-productivity .result-list>div:nth-child(4),app-productivity .record-card:nth-child(4){animation-delay:.135s}
+.bar i,.track i{transform-origin:left center;animation:barGrow .78s .18s cubic-bezier(.2,.75,.25,1) both;transition:width .55s cubic-bezier(.2,.75,.25,1)}
+app-productivity .columns i{transform-origin:center bottom;animation:columnGrow .72s .2s cubic-bezier(.2,.75,.25,1) both;transition:height .55s cubic-bezier(.2,.75,.25,1)}
+app-dashboard .donut-open{animation:donutDraw .9s .18s cubic-bezier(.2,.75,.25,1) both}
+app-cases .case-pie,app-tasks .pie-chart{animation:pieReveal .78s .2s cubic-bezier(.2,.75,.25,1) both;transition:background .45s ease}
+app-dashboard .kpi strong,app-dashboard .number-strip strong,app-cases .case-kpis strong,app-tasks .task-kpis strong,app-productivity .score strong,app-productivity .report-grid strong{animation:valueReveal .52s .18s cubic-bezier(.2,.8,.25,1) both}
+.metric-modal,.case-modal,.category-modal,.editor{animation:modalReveal .24s cubic-bezier(.2,.75,.25,1) both}
+.metric-modal-backdrop,.case-modal-backdrop,.category-modal-backdrop,.modal-backdrop{animation:backdropReveal .2s ease-out both}
+@keyframes pageReveal{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes sectionReveal{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes cardReveal{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes listReveal{from{opacity:0;transform:translateX(-7px)}to{opacity:1;transform:none}}
+@keyframes valueReveal{from{opacity:0;transform:translateY(7px);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
+@keyframes barGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes columnGrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes donutDraw{from{stroke-dashoffset:100;opacity:.25}to{stroke-dashoffset:0;opacity:1}}
+@keyframes pieReveal{from{opacity:0;clip-path:circle(0 at 50% 50%);transform:rotate(-18deg) scale(.92)}to{opacity:1;clip-path:circle(75% at 50% 50%);transform:none}}
+@keyframes modalReveal{from{opacity:0;transform:translateY(12px) scale(.975)}to{opacity:1;transform:none}}
+@keyframes backdropReveal{from{opacity:0}to{opacity:1}}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-delay:0ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
