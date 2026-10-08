@@ -35,6 +35,10 @@
     </div>
   </aside>
   <main class="content">
+    <div class="page-loading-state" *ngIf="loading$ | async" role="status" aria-live="polite">
+      <div class="loading-progress"><i></i></div>
+      <span><i></i> Actualizando indicadores…</span>
+    </div>
     <router-outlet *ngIf="connected$ | async; else sessionRequired"></router-outlet>
     <ng-template #sessionRequired><section class="session-required"><span class="eyebrow">ACCESO PERSONAL</span><h1>Inicia sesión para continuar</h1><p>Los casos, tareas y métricas se mostrarán después de validar tu cuenta de Acumatica.</p><button (click)="showLogin = true"><lucide-icon name="log-in"></lucide-icon>Iniciar sesión</button></section></ng-template>
   </main>
