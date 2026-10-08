@@ -3,6 +3,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { combineLatest, map } from 'rxjs';
 import { DashboardDataService } from '../../core/services/dashboard-data.service';
+import { categoryVisual } from '../../core/utils/category.utils';
 import { ActivityType, CaseItem, PeriodRange, ProfessionalRecord, ProfessionalRecordInput, TaskItem } from './productivity.models';
 import { ProductivityRecordsService } from './productivity-records.service';
 
@@ -10,6 +11,7 @@ type Period='day'|'week'|'month'|'quarter'|'year'|'history'|'custom';
 type View='analysis'|'journal'|'report';
 @Component({selector:'app-productivity',standalone:true,imports:[CommonModule,FormsModule],templateUrl:'./productivity.component.html',styleUrls:['./productivity.component.scss']})
 export class ProductivityComponent implements OnInit {
+  readonly categoryVisual = categoryVisual;
   readonly data=inject(DashboardDataService); private readonly api=inject(ProductivityRecordsService);
   readonly vm$=combineLatest([this.data.tasks$,this.data.cases$]).pipe(map(([tasks,cases])=>({tasks:tasks as TaskItem[],cases:cases as CaseItem[]})));
   readonly activityTypes:{value:ActivityType;label:string}[]=[{value:'Migration',label:'Migración'},{value:'Case',label:'Caso'},{value:'Certification',label:'Certificación'},{value:'Development',label:'Desarrollo'},{value:'Other',label:'Otra actividad'}];
@@ -34,7 +36,7 @@ export class ProductivityComponent implements OnInit {
   completionRate(tasks:TaskItem[]){return tasks.length?Math.round(this.completed(tasks)/tasks.length*100):0;}
   previous(tasks:TaskItem[]){return this.filtered(tasks,this.range(this.period,-1));}
   delta(current:number,previous:number){return previous?Math.round((current-previous)/previous*100):current?100:0;}
-  categories(tasks:TaskItem[]){const m=new Map<string,number>();tasks.forEach(t=>m.set(t.category||'Sin categoría',(m.get(t.category||'Sin categoría')||0)+1));return[...m].map(([name,count])=>({name,count})).sort((a,b)=>b.count-a.count);}
+  categories(tasks:TaskItem[]){const m=new Map<string,number>();tasks.forEach(t=>m.set(t.category||'Sin categoría',(m.get(t.category||'Sin categoría')||0)+1));return[...m].map(([name,count])=>({name,count,...categoryVisual(name)})).sort((a,b)=>b.count-a.count);}
   countCategory(tasks:TaskItem[],text:string){return tasks.filter(t=>`${t.category||''}`.toLowerCase().includes(text)).length;}
   max(items:{count:number}[]){return Math.max(1,...items.map(x=>x.count));}
   typeLabel(type:ActivityType){return this.activityTypes.find(x=>x.value===type)?.label||type;}
