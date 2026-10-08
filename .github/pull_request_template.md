@@ -4,7 +4,7 @@ Describe brevemente el problema y la solución.
 
 ## Cambios realizados
 
-- 
+-
 
 ## Verificación
 
