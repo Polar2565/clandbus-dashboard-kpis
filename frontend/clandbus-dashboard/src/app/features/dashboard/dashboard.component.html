@@ -20,9 +20,9 @@
     <article class="panel case-health">
       <div class="panel-title"><div><span>CARGA ACTIVA</span><h2>Estado de la bandeja</h2></div><a routerLink="/casos">Ver casos →</a></div>
       <div class="donut-wrap">
-        <svg viewBox="0 0 42 42" class="donut"><circle class="donut-base" cx="21" cy="21" r="15.9"></circle><circle class="donut-open" cx="21" cy="21" r="15.9" [attr.stroke-dasharray]="circumference(s.openCases, s.activeCases)"></circle></svg>
+        <svg viewBox="0 0 42 42" class="donut" role="img" aria-label="Distribución de casos activos por estado"><circle class="donut-base" cx="21" cy="21" r="15.9"></circle><circle class="donut-segment donut-open" cx="21" cy="21" r="15.9" [attr.stroke-dasharray]="donutSegment(s.openCases, s.activeCases)" [attr.stroke-dashoffset]="donutOffset(0, s.activeCases)"></circle><circle class="donut-segment donut-pending" cx="21" cy="21" r="15.9" [attr.stroke-dasharray]="donutSegment(s.pendingCustomerCases, s.activeCases)" [attr.stroke-dashoffset]="donutOffset(s.openCases, s.activeCases)"></circle><circle class="donut-segment donut-other" cx="21" cy="21" r="15.9" [attr.stroke-dasharray]="donutSegment(otherActiveCases(s.activeCases,s.openCases,s.pendingCustomerCases), s.activeCases)" [attr.stroke-dashoffset]="donutOffset(s.openCases+s.pendingCustomerCases, s.activeCases)"></circle></svg>
         <div class="donut-number"><strong>{{ s.activeCases }}</strong><span>activos</span></div>
-        <div class="legend"><div><i class="blue"></i><span>Abiertos y en atención</span><b>{{ s.openCases }}</b></div><div><i class="amber-dot"></i><span>Esperando respuesta del cliente</span><b>{{ s.pendingCustomerCases }}</b></div><div><i class="neutral-dot"></i><span>Otros activos</span><b>{{ s.activeCases-s.openCases-s.pendingCustomerCases }}</b></div></div>
+        <div class="legend"><div><i class="blue"></i><span>Abiertos y en atención</span><b>{{ s.openCases }}</b></div><div><i class="amber-dot"></i><span>Esperando respuesta del cliente</span><b>{{ s.pendingCustomerCases }}</b></div><div><i class="neutral-dot"></i><span>Otros activos</span><b>{{ otherActiveCases(s.activeCases,s.openCases,s.pendingCustomerCases) }}</b></div></div>
       </div>
       <p class="closed-note"><strong>{{ s.closedCases }}</strong> casos cerrados se conservan como histórico y no forman parte de la carga activa.</p>
     </article>
