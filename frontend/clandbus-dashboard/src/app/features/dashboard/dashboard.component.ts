@@ -19,8 +19,15 @@ export class DashboardComponent {
   readonly tasks$ = this.data.tasks$;
   selectedCategory = '';
   selectedInsight: 'overdue'|'load'|'urgent'|'' = '';
-  circumference(value: number, total: number) {
-    return total ? `${Math.round((value / total) * 100)} ${100 - Math.round((value / total) * 100)}` : '0 100';
+  donutSegment(value: number, total: number) {
+    const percentage = total ? Math.max(0, Math.min(100, (value / total) * 100)) : 0;
+    return `${percentage} ${100 - percentage}`;
+  }
+  donutOffset(previousValues: number, total: number) {
+    return total ? -Math.max(0, Math.min(100, (previousValues / total) * 100)) : 0;
+  }
+  otherActiveCases(active: number, open: number, pending: number) {
+    return Math.max(0, active - open - pending);
   }
   migrations(tasks:any[]){return tasks.filter(x=>`${x.category}`.toLowerCase().includes('migr')).length;}
   support(tasks:any[]){return tasks.filter(x=>`${x.category}`.toLowerCase().includes('soporte')).length;}
