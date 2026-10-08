@@ -51,7 +51,7 @@ app-tasks .task-kpis article,app-tasks .task-card,app-tasks .category-insight{bo
 @media(max-width:600px){app-dashboard .kpi-grid{grid-template-columns:1fr}app-dashboard .number-strip{grid-template-columns:1fr}app-cases .toolbar select{min-width:0;flex:1}app-cases .result-count{width:100%}app-cases .case-modal{padding:24px 18px}app-tasks .task-kpis{grid-template-columns:1fr}app-tasks .task-kpis article{min-height:108px}app-tasks .category-insight{padding:19px}}
 
 /* Motion system: subtle executive transitions shared by all dashboards. */
-app-dashboard,app-cases,app-tasks,app-productivity,app-integration{display:block;animation:pageReveal .42s cubic-bezier(.2,.75,.25,1) both}
+app-dashboard,app-cases,app-tasks,app-productivity,app-integration{display:block}
 .page-head{animation:sectionReveal .4s .03s cubic-bezier(.2,.75,.25,1) both}
 app-dashboard .kpi-grid>* ,app-dashboard .number-strip>*,app-cases .case-kpis>*,app-tasks .task-kpis>*,app-productivity .score-row>*,app-productivity .report-grid>*{opacity:0;animation:cardReveal .48s cubic-bezier(.2,.75,.25,1) both}
 app-dashboard .kpi-grid>*:nth-child(1),app-dashboard .number-strip>*:nth-child(1),app-cases .case-kpis>*:nth-child(1),app-tasks .task-kpis>*:nth-child(1),app-productivity .score-row>*:nth-child(1),app-productivity .report-grid>*:nth-child(1){animation-delay:.08s}
@@ -90,3 +90,10 @@ app-dashboard .donut-segment{transform-origin:50% 50%;animation:donutSegmentReve
 app-dashboard .donut-pending{animation-delay:.12s}
 app-dashboard .donut-other{animation-delay:.22s}
 @keyframes donutSegmentReveal{from{opacity:0;stroke-width:1;transform:scale(.9)}to{opacity:1;stroke-width:4;transform:scale(1)}}
+
+/* All dialogs own the viewport and prevent the page behind them from scrolling. */
+html:has(.metric-modal-backdrop,.case-modal-backdrop,.category-modal-backdrop,.modal-backdrop,.profile-modal-backdrop),
+body:has(.metric-modal-backdrop,.case-modal-backdrop,.category-modal-backdrop,.modal-backdrop,.profile-modal-backdrop){overflow:hidden!important;overscroll-behavior:none}
+.metric-modal-backdrop,.case-modal-backdrop,.category-modal-backdrop,.modal-backdrop,.profile-modal-backdrop{position:fixed!important;z-index:5000!important;inset:0!important;width:100vw!important;height:100dvh!important;box-sizing:border-box;overflow:hidden!important;overscroll-behavior:contain}
+.metric-modal,.case-modal,.category-modal,.editor,.profile-modal{max-height:min(88dvh,820px)!important;overscroll-behavior:contain}
+.task-detail-modal{overflow:auto!important}

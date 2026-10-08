@@ -144,6 +144,7 @@
     <button class="metric-close" (click)="selectedTask = null">×</button
     ><span class="eyebrow">DETALLE DE LA TAREA</span>
     <h2>{{ selectedTask.summary || 'Tarea sin descripción' }}</h2>
+    <p class="task-summary-note">Descripción disponible en la exportación de tareas.</p>
     <div class="detail-progress">
       <span>Avance</span><strong>{{ selectedTask.completionPercent || 0 }}%</strong>
       <div class="bar"><i [style.width.%]="selectedTask.completionPercent || 0"></i></div>
@@ -179,6 +180,14 @@
       <div class="wide">
         <span>Relacionado</span
         ><strong>{{ selectedTask.relatedCase || 'Sin entidad relacionada' }}</strong>
+      </div>
+      <div>
+        <span>Última captura</span
+        ><strong>{{ selectedTask.capturedAt ? (selectedTask.capturedAt | date: 'd MMM y, HH:mm') : 'Sin registro' }}</strong>
+      </div>
+      <div>
+        <span>Identificador</span
+        ><strong>{{ selectedTask.externalId || 'Sin identificador' }}</strong>
       </div>
     </div>
   </section>
