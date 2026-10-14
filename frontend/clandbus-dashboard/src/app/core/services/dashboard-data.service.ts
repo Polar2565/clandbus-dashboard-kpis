@@ -68,10 +68,7 @@ export class DashboardDataService {
       next: access => {
         this.canViewTeam$.next(access.canViewTeam);
         if (access.canViewTeam) {
-          const currentName = this.profile$.value?.displayName || '';
-          this.selectedOwner$.next(currentName);
           this.refreshOwners();
-          this.loadLocal();
         }
       },
       error: () => this.canViewTeam$.next(false)
@@ -153,11 +150,30 @@ export class DashboardDataService {
     this.api.getTeamOwners().subscribe({
       next: owners => {
         const currentName = this.profile$.value?.displayName || '';
-        const names = owners.includes(currentName) || !currentName ? owners : [...owners, currentName];
+        const names = owners.filter((owner, index, list) =>
+          list.findIndex(candidate => this.samePerson(candidate, owner)) === index
+        );
+        if (currentName && !names.some(owner => this.samePerson(owner, currentName))) names.push(currentName);
         this.teamOwners$.next(names.sort((a, b) => a.localeCompare(b, 'es')));
+
+        const selected = this.selectedOwner$.value;
+        const canonicalOwner = names.find(owner => this.samePerson(owner, selected || currentName)) || names[0] || '';
+        if (canonicalOwner !== selected) {
+          this.selectedOwner$.next(canonicalOwner);
+          this.loadLocal();
+        }
       },
       error: () => this.teamOwners$.next([])
     });
+  }
+
+  private samePerson(left: string, right: string) {
+    const normalize = (value: string) => value
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .trim().toLocaleLowerCase('es-MX');
+    const a = normalize(left);
+    const b = normalize(right);
+    return !!a && !!b && (a === b || a.startsWith(`${b} `) || b.startsWith(`${a} `));
   }
 
   disconnect() {
