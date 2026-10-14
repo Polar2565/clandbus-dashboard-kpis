@@ -200,24 +200,24 @@ namespace ClandbusERPIntegration.Services
             var cases = await GetRowsAsync(
                 $"t/{tenant}/api/odata/gi/CR-Cases2018R1?$top=1000",
                 useBasicAuthentication: true);
-            IReadOnlyList<JsonElement> employees;
-            try
-            {
-                employees = await GetEntityRowsAsync("Employee");
-            }
-            catch
-            {
-                return cases;
-            }
-
             var ownerNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var employee in employees)
+            foreach (var entity in new[] { "Employee", "Contact" })
             {
-                var name = Value(employee, "EmployeeName", "DisplayName", "EmployeeID_description", "AcctName");
-                if (string.IsNullOrWhiteSpace(name)) continue;
-                foreach (var id in new[] { "ContactID", "OwnerID", "BAccountID", "EmployeeID" }
-                    .Select(field => Value(employee, field)).Where(id => !string.IsNullOrWhiteSpace(id)))
-                    ownerNames.TryAdd(id, name);
+                try
+                {
+                    foreach (var person in await GetEntityRowsAsync(entity))
+                    {
+                        var name = Value(person, "EmployeeName", "DisplayName", "FullName", "ContactID_description", "EmployeeID_description", "AcctName");
+                        if (string.IsNullOrWhiteSpace(name)) continue;
+                        foreach (var id in new[] { "ContactID", "OwnerID", "BAccountID", "EmployeeID", "ID" }
+                            .Select(field => Value(person, field)).Where(id => !string.IsNullOrWhiteSpace(id)))
+                            ownerNames.TryAdd(id, name);
+                    }
+                }
+                catch (HttpRequestException)
+                {
+                    // Endpoint availability varies by Acumatica tenant.
+                }
             }
 
             return cases.Select(row =>
@@ -414,12 +414,22 @@ namespace ClandbusERPIntegration.Services
         {
             foreach (var name in names)
             {
-                if (!row.TryGetProperty(name, out var property)) continue;
+                if (!row.TryGetProperty(name, out var property))
+                {
+                    var expected = NormalizeFieldName(name);
+                    var match = row.EnumerateObject().FirstOrDefault(candidate =>
+                        NormalizeFieldName(candidate.Name).Equals(expected, StringComparison.OrdinalIgnoreCase));
+                    if (string.IsNullOrEmpty(match.Name)) continue;
+                    property = match.Value;
+                }
                 if (property.ValueKind == JsonValueKind.Object && property.TryGetProperty("value", out var wrapped)) property = wrapped;
                 return property.ValueKind == JsonValueKind.String ? property.GetString() ?? string.Empty : property.ToString();
             }
             return string.Empty;
         }
+
+        private static string NormalizeFieldName(string value) =>
+            new(value.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
 
         public async Task<bool> UpdateOrderAsync(
             UpdateOrderDto request)

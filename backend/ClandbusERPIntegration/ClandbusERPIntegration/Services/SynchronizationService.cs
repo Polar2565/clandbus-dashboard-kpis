@@ -96,7 +96,14 @@ public sealed class SynchronizationService(
     {
         foreach (var name in names)
         {
-            if (!row.TryGetProperty(name, out var property)) continue;
+            if (!row.TryGetProperty(name, out var property))
+            {
+                var expected = NormalizeFieldName(name);
+                var match = row.EnumerateObject().FirstOrDefault(candidate =>
+                    NormalizeFieldName(candidate.Name).Equals(expected, StringComparison.OrdinalIgnoreCase));
+                if (string.IsNullOrEmpty(match.Name)) continue;
+                property = match.Value;
+            }
             if (property.ValueKind == JsonValueKind.Object
                 && property.TryGetProperty("value", out var wrapped)) property = wrapped;
             return property.ValueKind == JsonValueKind.String
@@ -104,6 +111,9 @@ public sealed class SynchronizationService(
         }
         return string.Empty;
     }
+
+    private static string NormalizeFieldName(string value) =>
+        new(value.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
 
     private static DateTimeOffset? Date(JsonElement row, params string[] names) =>
         DateTimeOffset.TryParse(Value(row, names), CultureInfo.InvariantCulture,
