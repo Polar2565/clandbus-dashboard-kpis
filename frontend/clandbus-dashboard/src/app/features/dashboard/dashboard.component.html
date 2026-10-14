@@ -30,8 +30,10 @@
     <article class="panel focus-panel">
       <div class="panel-title"><div><span>Prioridad de hoy</span><h2>Atención necesaria</h2></div></div>
       <div class="focus-list" *ngIf="cases$ | async as cases">
-        <a routerLink="/casos" *ngFor="let item of attentionCases(cases) | slice:0:4"><span class="case-code">{{ item.caseNumber || 'CASO' }}</span><div><strong>{{ item.subject || 'Sin asunto' }}</strong><small>{{ item.customer || 'Sin cliente' }}</small></div><b>›</b></a>
-        <div class="empty" *ngIf="attentionCases(cases).length === 0">No existen casos activos que requieran respuesta.</div>
+        <ng-container *ngIf="tasks$ | async as tasks">
+          <a [routerLink]="item.route" *ngFor="let item of attentionItems(cases,tasks) | slice:0:6"><span class="attention-type" [ngClass]="item.tone">{{ item.type }}</span><div><strong>{{ item.title }}</strong><small>{{ item.detail }}</small></div><b>›</b></a>
+          <div class="empty" *ngIf="attentionItems(cases,tasks).length === 0">No existen casos ni tareas que requieran atención inmediata.</div>
+        </ng-container>
       </div>
     </article>
 

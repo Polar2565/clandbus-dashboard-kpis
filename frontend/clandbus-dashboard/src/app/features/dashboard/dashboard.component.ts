@@ -53,6 +53,19 @@ export class DashboardComponent {
     return cases.filter(caseNeedsAttention).sort((a,b)=>
       new Date(b.lastIncomingAt||b.createdAt||0).getTime()-new Date(a.lastIncomingAt||a.createdAt||0).getTime());
   }
+  attentionItems(cases:any[],tasks:any[]){
+    const start=new Date();start.setHours(0,0,0,0);
+    const end=new Date(start);end.setDate(end.getDate()+1);
+    const urgentTasks=this.pendingTasks(tasks).filter(task=>task.dueAt&&new Date(task.dueAt)<end).map(task=>{
+      const due=new Date(task.dueAt);
+      const overdue=due<start;
+      return {priority:overdue?0:1,type:overdue?'Tarea vencida':'Vence hoy',tone:overdue?'risk':'today',title:task.summary||'Tarea sin nombre',detail:overdue?`Venció ${due.toLocaleDateString('es-MX')}`:'Debe completarse hoy',route:'/tasks',date:due.getTime()};
+    });
+    const urgentCases=this.attentionCases(cases).map(item=>({
+      priority:2,type:'Caso sin respuesta',tone:'case',title:item.subject||'Caso sin asunto',detail:`${item.caseNumber||'CASO'} · ${item.customer||'Sin cliente'}`,route:'/casos',date:new Date(item.lastIncomingAt||item.createdAt||0).getTime()
+    }));
+    return [...urgentTasks,...urgentCases].sort((a,b)=>a.priority-b.priority||(a.priority===2?b.date-a.date:a.date-b.date));
+  }
   insightTasks(tasks:any[]){
     if(this.selectedInsight==='overdue')return this.overduePending(tasks);
     if(this.selectedInsight==='load'){const top=this.topPendingCategory(tasks);return top?this.pendingTasks(tasks).filter(x=>`${x.category||'Sin categoría'}`.trim()===top.name):[];}
