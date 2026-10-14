@@ -99,10 +99,13 @@ public sealed class SynchronizationService(
             if (!row.TryGetProperty(name, out var property))
             {
                 var expected = NormalizeFieldName(name);
-                var match = row.EnumerateObject().FirstOrDefault(candidate =>
-                    NormalizeFieldName(candidate.Name).Equals(expected, StringComparison.OrdinalIgnoreCase));
-                if (string.IsNullOrEmpty(match.Name)) continue;
-                property = match.Value;
+                var match = row.EnumerateObject()
+                    .Where(candidate => NormalizeFieldName(candidate.Name)
+                        .Equals(expected, StringComparison.OrdinalIgnoreCase))
+                    .Cast<JsonProperty?>()
+                    .FirstOrDefault();
+                if (!match.HasValue) continue;
+                property = match.Value.Value;
             }
             if (property.ValueKind == JsonValueKind.Object
                 && property.TryGetProperty("value", out var wrapped)) property = wrapped;
