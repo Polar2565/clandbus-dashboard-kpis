@@ -201,6 +201,8 @@ namespace ClandbusERPIntegration.Services
                 $"t/{tenant}/api/odata/gi/CR-Cases2018R1?$top=1000",
                 useBasicAuthentication: true);
             var ownerNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var mapping in _settings.OwnerMappings)
+                ownerNames[NormalizeIdentifier(mapping.Key)] = mapping.Value;
             if (!string.IsNullOrWhiteSpace(_settings.OwnerId) && !string.IsNullOrWhiteSpace(_settings.OwnerName))
                 ownerNames[NormalizeIdentifier(_settings.OwnerId)] = _settings.OwnerName;
             if (!string.IsNullOrWhiteSpace(CurrentOwnerId) && !string.IsNullOrWhiteSpace(CurrentDisplayName))

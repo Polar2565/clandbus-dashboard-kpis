@@ -8,5 +8,6 @@
         public string Branch { get; set; } = string.Empty;
         public string OwnerId { get; set; } = string.Empty;
         public string OwnerName { get; set; } = string.Empty;
+        public Dictionary<string, string> OwnerMappings { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     }
 }
