@@ -1,0 +1,74 @@
+<section class="team-page">
+  <header class="page-heading">
+    <div><span class="eyebrow">VISIÓN EJECUTIVA</span><h1>Rendimiento del equipo</h1><p>La semana y el acumulado en una sola lectura, con detalle por integrante.</p></div>
+    <div class="member-filter">
+      <label for="teamMember">Integrante</label>
+      <select id="teamMember" [(ngModel)]="selectedUserKey" (change)="selectMember()">
+        <option value="">Todo el equipo</option>
+        <option *ngFor="let member of report?.members" [value]="member.userKey">{{ member.displayName }}</option>
+      </select>
+    </div>
+  </header>
+
+  <section class="measurement-bar">
+    <div><span>VENTANA DE MEDICIÓN</span><strong>{{ period === 'week' ? 'Esta semana' : period === 'month' ? 'Este mes' : period === 'year' ? 'Este año' : 'Todo el histórico' }}</strong><small>Resultados operativos del periodo y carga vigente.</small></div>
+    <div class="period-switch" role="group" aria-label="Periodo de análisis">
+      <button *ngFor="let option of ['week','month','year','history']" [class.active]="period === option" (click)="selectPeriod($any(option))">{{ option === 'week' ? 'Semana' : option === 'month' ? 'Mes' : option === 'year' ? 'Año' : 'Histórico' }}</button>
+    </div>
+  </section>
+
+  <div class="state-card" *ngIf="loading"><span class="spinner"></span><strong>Preparando el consolidado…</strong></div>
+  <div class="state-card error" *ngIf="error"><lucide-icon name="shield-alert"></lucide-icon><strong>{{ error }}</strong><button (click)="back()">Volver al resumen</button></div>
+
+  <ng-container *ngIf="report && !loading && !error">
+    <section class="kpi-grid">
+      <button class="kpi primary" (click)="openDetail('completed')"><span>COMPLETADAS</span><strong>{{ report.tasksCompleted }}</strong><small><b [class.negative]="report.completedVariationPercent < 0">{{ report.completedVariationPercent > 0 ? '+' : '' }}{{ report.completedVariationPercent }}%</b> frente al periodo anterior</small><i>Ver tareas <lucide-icon name="arrow-up-right"></lucide-icon></i></button>
+      <button class="kpi" (click)="openDetail('active')"><span>CARGA ACTIVA</span><strong>{{ report.activeTasks }}</strong><small>Tareas pendientes actualmente</small><i>Ver pendientes <lucide-icon name="arrow-up-right"></lucide-icon></i></button>
+      <button class="kpi warning" (click)="openDetail('overdue')"><span>ATENCIÓN REQUERIDA</span><strong>{{ report.overdueTasks }}</strong><small>Tareas con fecha vencida</small><i>Revisar vencidas <lucide-icon name="arrow-up-right"></lucide-icon></i></button>
+      <button class="kpi cases" (click)="openDetail('cases')"><span>CASOS RECIBIDOS</span><strong>{{ report.casesCreated }}</strong><small>{{ report.activeCases }} casos permanecen activos</small><i>Ver casos <lucide-icon name="arrow-up-right"></lucide-icon></i></button>
+    </section>
+
+    <section class="insight-strip">
+      <div><span>CUMPLIMIENTO DEL PERIODO</span><strong>{{ report.completionRate }}%</strong></div>
+      <div class="progress"><i [style.width.%]="report.completionRate"></i></div>
+      <p>Compara las tareas concluidas con la actividad registrada dentro de la ventana seleccionada.</p>
+    </section>
+
+    <section class="dashboard-grid">
+      <article class="panel trend-panel">
+        <header><div><span class="eyebrow">EVOLUCIÓN</span><h2>Actividad del periodo</h2></div><div class="legend"><i class="started"></i>Iniciadas <i class="completed"></i>Completadas <i class="created"></i>Casos</div></header>
+        <div class="chart" [style.--points]="report.trend.length">
+          <div class="chart-group" *ngFor="let point of report.trend">
+            <div class="bars"><i class="started" [style.height]="barHeight(point.tasksStarted)" [title]="point.tasksStarted + ' iniciadas'"></i><i class="completed" [style.height]="barHeight(point.tasksCompleted)" [title]="point.tasksCompleted + ' completadas'"></i><i class="created" [style.height]="barHeight(point.casesCreated)" [title]="point.casesCreated + ' casos'"></i></div>
+            <span>{{ point.label }}</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel category-panel">
+        <header><div><span class="eyebrow">COMPOSICIÓN</span><h2>Trabajo por categoría</h2></div></header>
+        <div class="empty-copy" *ngIf="!report.categories.length">No hay tareas registradas en este periodo.</div>
+        <div class="category" *ngFor="let category of report.categories; index as i"><div><strong>{{ category.name }}</strong><span>{{ category.count }} {{ category.count === 1 ? 'tarea' : 'tareas' }}</span></div><div class="category-track"><i [style.width]="categoryWidth(category.count)" [style.background]="categoryColor(i)"></i></div></div>
+      </article>
+    </section>
+
+    <section class="panel members-panel">
+      <header><div><span class="eyebrow">EQUIPO</span><h2>Resultado por integrante</h2></div><small>Selecciona una persona arriba para profundizar.</small></header>
+      <div class="table-wrap"><table><thead><tr><th>Integrante</th><th>Completadas</th><th>Iniciadas</th><th>Activas</th><th>Vencidas</th><th>Casos recibidos</th><th>Cumplimiento</th></tr></thead><tbody><tr *ngFor="let member of report.memberResults" (click)="selectedUserKey = member.userKey; selectMember()"><td><span class="avatar">{{ member.displayName.slice(0,1) }}</span><strong>{{ member.displayName }}</strong></td><td>{{ member.tasksCompleted }}</td><td>{{ member.tasksStarted }}</td><td>{{ member.activeTasks }}</td><td [class.danger]="member.overdueTasks">{{ member.overdueTasks }}</td><td>{{ member.casesCreated }}</td><td><b>{{ member.completionRate }}%</b></td></tr></tbody></table></div>
+    </section>
+  </ng-container>
+</section>
+
+<div class="detail-backdrop" *ngIf="detail" (click)="closeDetail()">
+  <section class="detail-modal" role="dialog" aria-modal="true" [attr.aria-label]="detailTitle()" (click)="$event.stopPropagation()">
+    <header><div><span class="eyebrow">DETALLE DEL INDICADOR</span><h2>{{ detailTitle() }}</h2><p>{{ selectedUserKey ? 'Vista del integrante seleccionado' : 'Vista consolidada del equipo' }}</p></div><button (click)="closeDetail()" aria-label="Cerrar"><lucide-icon name="x"></lucide-icon></button></header>
+    <div class="detail-list" *ngIf="detail !== 'cases'">
+      <article *ngFor="let task of detailTasks()"><div><span>{{ task.category || 'Sin categoría' }}</span><strong>{{ task.summary }}</strong><small>{{ task.owner || task.userKey }} · {{ task.relatedCase || 'Sin caso relacionado' }}</small></div><div class="detail-meta"><b>{{ task.completionPercent }}%</b><small>{{ task.dueAt ? ('Vence ' + (task.dueAt | date:'d MMM y')) : 'Sin vencimiento' }}</small></div></article>
+      <p class="empty-copy" *ngIf="!detailTasks().length">No hay registros para este indicador.</p>
+    </div>
+    <div class="detail-list" *ngIf="detail === 'cases'">
+      <article *ngFor="let item of detailCases()"><div><span>{{ item.caseNumber || 'Caso' }}</span><strong>{{ item.subject }}</strong><small>{{ item.owner || item.userKey }} · {{ item.customer || 'Sin cliente' }}</small></div><div class="detail-meta"><b>{{ item.status }}</b><small>{{ item.createdAt | date:'d MMM y' }}</small></div></article>
+      <p class="empty-copy" *ngIf="!detailCases().length">No hay casos registrados en este periodo.</p>
+    </div>
+  </section>
+</div>

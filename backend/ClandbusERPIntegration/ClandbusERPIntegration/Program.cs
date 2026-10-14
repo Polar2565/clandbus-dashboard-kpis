@@ -22,6 +22,10 @@ builder.Services
         "Acumatica:Company is required.")
     .ValidateOnStart();
 
+builder.Services
+    .AddOptions<TeamDashboardSettings>()
+    .Bind(builder.Configuration.GetSection(TeamDashboardSettings.SectionName));
+
 // ======================================
 // ISOLATED ERP SESSIONS
 // ======================================

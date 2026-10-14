@@ -93,6 +93,22 @@ export class AcumaticaService {
     return this.http.get<any[]>(`https://localhost:7004/api/Dashboard/trends?period=${period}`, { withCredentials: true });
   }
 
+  getTeamAccess() {
+    return this.http.get<{ canViewTeam: boolean }>(
+      'https://localhost:7004/api/team-dashboard/access',
+      { withCredentials: true }
+    );
+  }
+
+  getTeamReport(period: 'week' | 'month' | 'year' | 'history', userKey = '') {
+    const params: Record<string, string> = { period };
+    if (userKey) params['userKey'] = userKey;
+    return this.http.get<any>(
+      'https://localhost:7004/api/team-dashboard/report',
+      { withCredentials: true, params }
+    );
+  }
+
   updateOrder(payload: any) {
 
     return this.http.post(

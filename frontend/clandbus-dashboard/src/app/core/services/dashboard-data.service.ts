@@ -22,6 +22,7 @@ export class DashboardDataService {
   readonly status$ = new BehaviorSubject('Datos locales listos');
   readonly error$ = new BehaviorSubject('');
   readonly profile$ = new BehaviorSubject<UserProfile | null>(null);
+  readonly canViewTeam$ = new BehaviorSubject(false);
   readonly notification$ = new BehaviorSubject<AppNotification | null>(null);
   private timer?: ReturnType<typeof setInterval>;
   private notificationTimer?: ReturnType<typeof setTimeout>;
@@ -42,6 +43,7 @@ export class DashboardDataService {
   private clearPrivateData() {
     this.summary$.next(EMPTY); this.cases$.next([]); this.tasks$.next([]);
     this.connected$.next(false); this.profile$.next(null);
+    this.canViewTeam$.next(false);
     this.status$.next('Inicia sesión para consultar tus métricas');
   }
 
@@ -58,6 +60,10 @@ export class DashboardDataService {
   sessionStarted(profile?: UserProfile, announce = true) {
     if (profile) this.profile$.next(profile);
     this.connected$.next(true); this.loadLocal();
+    this.api.getTeamAccess().subscribe({
+      next: access => this.canViewTeam$.next(access.canViewTeam),
+      error: () => this.canViewTeam$.next(false)
+    });
     if (this.timer) clearInterval(this.timer);
     this.timer = setInterval(() => this.loadLocal(), 60 * 60 * 1000);
     if (announce) this.notify('Sesión iniciada. Tus métricas están disponibles.', 'success');

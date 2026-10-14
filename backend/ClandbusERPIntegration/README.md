@@ -10,6 +10,7 @@ API ASP.NET Core 8 que autentica contra Acumatica, mantiene sesiones aisladas po
 - Importación del Excel más reciente desde `App_Data/TaskImports`.
 - Persistencia por `UserKey` y bitácora profesional.
 - Resumen, tendencias y productividad.
+- Consolidado ejecutivo del equipo protegido por lista de usuarios autorizados.
 
 ## Estructura
 
@@ -35,6 +36,8 @@ dotnet run --project backend\ClandbusERPIntegration\ClandbusERPIntegration\Cland
 
 Configura localmente `BaseUrl`, versión, compañía y cadena SQL; nunca usuario, contraseña ni una URL privada en archivos versionados. HTTPS usa `7004`, HTTP `5124` y Swagger `/swagger`.
 
+Agrega en `TeamDashboard:ExecutiveUsers` los usuarios o nombres exactos de Acumatica que podrán consultar el consolidado. Los integrantes no incluidos mantienen acceso exclusivamente personal.
+
 ## Endpoints
 
 | Método | Ruta | Función |
@@ -54,10 +57,12 @@ Configura localmente `BaseUrl`, versión, compañía y cadena SQL; nunca usuario
 | GET | `/api/Dashboard/cases` | Casos personales |
 | GET | `/api/Dashboard/tasks` | Tareas personales |
 | GET | `/api/Dashboard/trends?period=` | Tendencias |
+| GET | `/api/team-dashboard/access` | Indica si la cuenta puede ver al equipo |
+| GET | `/api/team-dashboard/report` | Consolidado autorizado por periodo e integrante |
 | GET/POST | `/api/Productivity/records` | Lista/crea bitácora |
 | PUT/DELETE | `/api/Productivity/records/{id}` | Actualiza/elimina registro propio |
 
-Salvo Salud y Login, las rutas personales requieren sesión.
+Salvo Salud y Login, las rutas personales requieren sesión. El reporte de equipo exige además que el usuario autenticado esté en la lista ejecutiva local.
 
 ## Compilar
 

@@ -47,7 +47,7 @@ export class App {
     const segment = this.router.url.split('?')[0].split('/')[1] || 'resumen';
     const titles: Record<string, string> = {
       resumen: 'Resumen', casos: 'Casos', tasks: 'Tareas',
-      productividad: 'Productividad', integracion: 'Integración'
+      productividad: 'Productividad', equipo: 'Equipo', integracion: 'Integración'
     };
     return titles[segment] || 'Gestión de soporte';
   }

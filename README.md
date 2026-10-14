@@ -1,6 +1,6 @@
 # ClandBus Dashboard de Gestión de Soporte
 
-Aplicación web independiente para consultar y analizar el trabajo personal registrado en Acumatica. Integra casos, tareas importadas desde Excel, métricas operativas, productividad y una bitácora profesional.
+Aplicación web independiente para consultar y analizar el trabajo personal y consolidado del equipo registrado en Acumatica. Integra casos, tareas importadas desde Excel, métricas operativas, productividad y una bitácora profesional.
 
 > El repositorio no contiene la URL privada del ERP, credenciales, archivos Excel reales ni datos de clientes. Cada instalación debe aportar su propia configuración local.
 
@@ -16,6 +16,7 @@ Aplicación web independiente para consultar y analizar el trabajo personal regi
 - Productividad, evolución temporal, cumplimiento y bitácora profesional.
 - Exportación compatible con Excel y salida mediante impresión a PDF.
 - Historial SQL separado por `UserKey`.
+- Vista ejecutiva autorizada con consolidado semanal, mensual, anual e histórico del equipo.
 
 ## Arquitectura
 
@@ -113,8 +114,11 @@ Edita el nuevo `appsettings.Development.json` y reemplaza solamente los valores 
 | `Acumatica:Branch` | Sucursal, o una cadena vacía si no aplica |
 | `OwnerId` / `OwnerName` | Déjalos vacíos; solo son respaldo si tu endpoint no identifica al usuario |
 | `ConnectionStrings:Dashboard` | Cadena de conexión de SQL Server o LocalDB |
+| `TeamDashboard:ExecutiveUsers` | Usuarios o nombres de Acumatica autorizados para consultar el consolidado |
 
 `appsettings.Development.json` está ignorado por Git. Nunca pongas usuario, contraseña, cookie, URL privada o datos del cliente en el archivo de ejemplo versionado.
+
+La vista **Equipo** utiliza las capturas más recientes almacenadas en la misma base SQL. Cada integrante debe iniciar sesión y sincronizar sus datos al menos una vez. Solo las cuentas incluidas en `TeamDashboard:ExecutiveUsers` pueden consultar el consolidado; ocultar el enlace en Angular no sustituye esta validación del backend.
 
 ### 3. Preparar SQL Server
 
