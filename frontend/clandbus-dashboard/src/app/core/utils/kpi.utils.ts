@@ -139,6 +139,20 @@ export function caseStatusKey(value: string | null | undefined): CaseStatusKey {
   return 'unknown';
 }
 
+export function caseNeedsAttention(item: {
+  status?: string | null;
+  lastIncomingAt?: string | null;
+  lastOutgoingAt?: string | null;
+}): boolean {
+  const status = caseStatusKey(item.status);
+  if (status === 'closed' || status === 'pendingCustomer') return false;
+  if (status === 'new') return true;
+
+  const incoming = item.lastIncomingAt ? new Date(item.lastIncomingAt).getTime() : 0;
+  const outgoing = item.lastOutgoingAt ? new Date(item.lastOutgoingAt).getTime() : 0;
+  return status === 'open' && (incoming === 0 || outgoing === 0 || incoming > outgoing);
+}
+
 function normalize(value: unknown): string {
   return `${value ?? ''}`.trim().toLocaleLowerCase('es-MX');
 }

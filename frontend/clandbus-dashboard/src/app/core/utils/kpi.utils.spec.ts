@@ -1,6 +1,7 @@
 import {
   activeTasks,
   calculateTaskCompliance,
+  caseNeedsAttention,
   caseStatusKey,
   completedTasksInRange,
   createdCasesInRange,
@@ -71,5 +72,13 @@ describe('kpi.utils', () => {
     expect(caseStatusKey('Esperando cliente')).toBe('pendingCustomer');
     expect(caseStatusKey('Released')).toBe('closed');
     expect(caseStatusKey('Personalizado')).toBe('unknown');
+  });
+
+  it('excluye casos cerrados y en espera del bloque de atención necesaria', () => {
+    expect(caseNeedsAttention({ status: 'Cerrado', lastIncomingAt: '2026-10-14' })).toBeFalse();
+    expect(caseNeedsAttention({ status: 'Esperando cliente', lastIncomingAt: '2026-10-14' })).toBeFalse();
+    expect(caseNeedsAttention({ status: 'Nuevo' })).toBeTrue();
+    expect(caseNeedsAttention({ status: 'Abierto', lastIncomingAt: '2026-10-14', lastOutgoingAt: '2026-10-13' })).toBeTrue();
+    expect(caseNeedsAttention({ status: 'Abierto', lastIncomingAt: '2026-10-12', lastOutgoingAt: '2026-10-13' })).toBeFalse();
   });
 });

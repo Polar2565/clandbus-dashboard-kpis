@@ -3,6 +3,7 @@ import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DashboardDataService } from '../../core/services/dashboard-data.service';
 import { LucideAngularModule } from 'lucide-angular';
+import { caseNeedsAttention } from '../../core/utils/kpi.utils';
 
 @Component({
   selector: 'app-dashboard',
@@ -48,6 +49,10 @@ export class DashboardComponent {
     return top?{name:top[0],count:top[1]}:null;
   }
   nextDue(tasks:any[]){return this.pendingTasks(tasks).find(x=>x.dueAt)||null;}
+  attentionCases(cases:any[]){
+    return cases.filter(caseNeedsAttention).sort((a,b)=>
+      new Date(b.lastIncomingAt||b.createdAt||0).getTime()-new Date(a.lastIncomingAt||a.createdAt||0).getTime());
+  }
   insightTasks(tasks:any[]){
     if(this.selectedInsight==='overdue')return this.overduePending(tasks);
     if(this.selectedInsight==='load'){const top=this.topPendingCategory(tasks);return top?this.pendingTasks(tasks).filter(x=>`${x.category||'Sin categoría'}`.trim()===top.name):[];}

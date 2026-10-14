@@ -30,8 +30,8 @@
     <article class="panel focus-panel">
       <div class="panel-title"><div><span>Prioridad de hoy</span><h2>Atención necesaria</h2></div></div>
       <div class="focus-list" *ngIf="cases$ | async as cases">
-        <a routerLink="/casos" *ngFor="let item of cases | slice:0:4"><span class="case-code">{{ item.caseNumber || 'CASO' }}</span><div><strong>{{ item.subject || 'Sin asunto' }}</strong><small>{{ item.customer || 'Sin cliente' }}</small></div><b>›</b></a>
-        <div class="empty" *ngIf="cases.length === 0">Conecta el ERP para identificar los casos que requieren atención.</div>
+        <a routerLink="/casos" *ngFor="let item of attentionCases(cases) | slice:0:4"><span class="case-code">{{ item.caseNumber || 'CASO' }}</span><div><strong>{{ item.subject || 'Sin asunto' }}</strong><small>{{ item.customer || 'Sin cliente' }}</small></div><b>›</b></a>
+        <div class="empty" *ngIf="attentionCases(cases).length === 0">No existen casos activos que requieran respuesta.</div>
       </div>
     </article>
 
