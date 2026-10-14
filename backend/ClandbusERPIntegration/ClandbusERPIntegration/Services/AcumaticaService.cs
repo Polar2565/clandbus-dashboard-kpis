@@ -228,7 +228,8 @@ namespace ClandbusERPIntegration.Services
                 var ownerId = owner.HasValue ? NormalizeIdentifier(ScalarValue(owner.Value.Value)) : string.Empty;
                 var objectNode = JsonNode.Parse(row.GetRawText())?.AsObject();
                 if (objectNode is null) return row;
-                objectNode["OwnerDisplayName"] = ownerNames.GetValueOrDefault(ownerId, ownerId);
+                if (ownerNames.TryGetValue(ownerId, out var ownerName))
+                    objectNode["OwnerDisplayName"] = ownerName;
                 return JsonSerializer.Deserialize<JsonElement>(objectNode.ToJsonString());
             }).ToArray();
         }
