@@ -201,17 +201,19 @@ namespace ClandbusERPIntegration.Services
                 $"t/{tenant}/api/odata/gi/CR-Cases2018R1?$top=1000",
                 useBasicAuthentication: true);
             var ownerNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var entity in new[] { "Employee", "Contact" })
+            if (!string.IsNullOrWhiteSpace(_settings.OwnerId) && !string.IsNullOrWhiteSpace(_settings.OwnerName))
+                ownerNames[NormalizeIdentifier(_settings.OwnerId)] = _settings.OwnerName;
+            if (!string.IsNullOrWhiteSpace(CurrentOwnerId) && !string.IsNullOrWhiteSpace(CurrentDisplayName))
+                ownerNames[NormalizeIdentifier(CurrentOwnerId)] = CurrentDisplayName;
+            foreach (var entity in new[] { "Employee", "Contact", "User" })
             {
                 try
                 {
                     foreach (var person in await GetEntityRowsAsync(entity))
                     {
-                        var name = Value(person, "EmployeeName", "DisplayName", "FullName", "ContactID_description", "EmployeeID_description", "AcctName");
+                        var name = PersonName(person);
                         if (string.IsNullOrWhiteSpace(name)) continue;
-                        foreach (var id in new[] { "ContactID", "OwnerID", "BAccountID", "EmployeeID", "ID" }
-                            .Select(field => Value(person, field)).Where(id => !string.IsNullOrWhiteSpace(id)))
-                            ownerNames.TryAdd(id, name);
+                        foreach (var id in PersonIdentifiers(person)) ownerNames.TryAdd(id, name);
                     }
                 }
                 catch (HttpRequestException)
@@ -223,7 +225,7 @@ namespace ClandbusERPIntegration.Services
             return cases.Select(row =>
             {
                 var owner = FindOwnerProperty(row);
-                var ownerId = owner.HasValue ? ScalarValue(owner.Value.Value) : string.Empty;
+                var ownerId = owner.HasValue ? NormalizeIdentifier(ScalarValue(owner.Value.Value)) : string.Empty;
                 var objectNode = JsonNode.Parse(row.GetRawText())?.AsObject();
                 if (objectNode is null) return row;
                 objectNode["OwnerDisplayName"] = ownerNames.GetValueOrDefault(ownerId, ownerId);
@@ -388,10 +390,16 @@ namespace ClandbusERPIntegration.Services
                 var local = login.Split('@')[0];
                 foreach (var row in employees)
                 {
-                    var email = Value(row, "Email", "EmployeeEmail", "UserLogin", "LoginName").ToLowerInvariant();
-                    if (email != login && !email.StartsWith(local + "@") && email != local) continue;
-                    CurrentOwnerId = Value(row, "ContactID", "OwnerID", "BAccountID", "EmployeeID");
-                    var name = Value(row, "EmployeeName", "DisplayName", "EmployeeID_description", "AcctName");
+                    var identities = row.EnumerateObject()
+                        .Where(property => property.Name.Contains("mail", StringComparison.OrdinalIgnoreCase)
+                            || property.Name.Contains("login", StringComparison.OrdinalIgnoreCase)
+                            || property.Name.Contains("user", StringComparison.OrdinalIgnoreCase))
+                        .Select(property => ScalarValue(property.Value).ToLowerInvariant())
+                        .Where(value => !string.IsNullOrWhiteSpace(value))
+                        .ToArray();
+                    if (!identities.Any(value => value == login || value == local || value.StartsWith(local + "@"))) continue;
+                    CurrentOwnerId = PersonIdentifiers(row).FirstOrDefault() ?? string.Empty;
+                    var name = PersonName(row);
                     if (!string.IsNullOrWhiteSpace(name)) CurrentDisplayName = name;
                     break;
                 }
@@ -433,6 +441,31 @@ namespace ClandbusERPIntegration.Services
 
         private static string NormalizeFieldName(string value) =>
             new(value.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
+
+        private static string PersonName(JsonElement row)
+        {
+            var preferred = Value(row, "EmployeeName", "DisplayName", "FullName", "ContactID_description", "EmployeeID_description", "AcctName");
+            if (!string.IsNullOrWhiteSpace(preferred)) return preferred;
+            return row.EnumerateObject()
+                .Where(property => property.Name.Contains("name", StringComparison.OrdinalIgnoreCase)
+                    || property.Name.Contains("description", StringComparison.OrdinalIgnoreCase))
+                .Select(property => ScalarValue(property.Value).Trim())
+                .FirstOrDefault(value => value.Any(char.IsLetter) && value.Contains(' ')) ?? string.Empty;
+        }
+
+        private static IEnumerable<string> PersonIdentifiers(JsonElement row) => row.EnumerateObject()
+            .Where(property => property.Name.Contains("id", StringComparison.OrdinalIgnoreCase))
+            .Select(property => NormalizeIdentifier(ScalarValue(property.Value)))
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+
+        private static string NormalizeIdentifier(string value)
+        {
+            value = value.Trim();
+            return decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var number)
+                ? decimal.Truncate(number).ToString(CultureInfo.InvariantCulture)
+                : value;
+        }
 
         public async Task<bool> UpdateOrderAsync(
             UpdateOrderDto request)
