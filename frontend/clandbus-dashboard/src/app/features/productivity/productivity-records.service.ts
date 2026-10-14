@@ -5,8 +5,9 @@ import { ProfessionalRecord, ProfessionalRecordInput } from './productivity.mode
 export class ProductivityRecordsService {
   private readonly url='https://localhost:7004/api/Productivity/records';
   constructor(private readonly http:HttpClient){}
-  list(from?:string,to?:string){let params=new HttpParams();if(from)params=params.set('from',from);if(to)params=params.set('to',to);return this.http.get<ProfessionalRecord[]>(this.url,{params,withCredentials:true});}
-  create(input:ProfessionalRecordInput){return this.http.post<ProfessionalRecord>(this.url,input,{withCredentials:true});}
-  update(id:number,input:ProfessionalRecordInput){return this.http.put<ProfessionalRecord>(`${this.url}/${id}`,input,{withCredentials:true});}
-  remove(id:number){return this.http.delete<void>(`${this.url}/${id}`,{withCredentials:true});}
+  private params(owner:string,from?:string,to?:string){let params=new HttpParams();if(owner)params=params.set('owner',owner);if(from)params=params.set('from',from);if(to)params=params.set('to',to);return params;}
+  list(owner:string,from?:string,to?:string){return this.http.get<ProfessionalRecord[]>(this.url,{params:this.params(owner,from,to),withCredentials:true});}
+  create(owner:string,input:ProfessionalRecordInput){return this.http.post<ProfessionalRecord>(this.url,input,{params:this.params(owner),withCredentials:true});}
+  update(owner:string,id:number,input:ProfessionalRecordInput){return this.http.put<ProfessionalRecord>(`${this.url}/${id}`,input,{params:this.params(owner),withCredentials:true});}
+  remove(owner:string,id:number){return this.http.delete<void>(`${this.url}/${id}`,{params:this.params(owner),withCredentials:true});}
 }
