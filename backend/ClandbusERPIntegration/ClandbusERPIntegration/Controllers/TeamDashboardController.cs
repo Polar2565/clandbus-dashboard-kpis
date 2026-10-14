@@ -46,11 +46,13 @@ public sealed class TeamDashboardController(
             .Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt && x.Owner != "")
             .Select(x => x.Owner).Distinct().ToListAsync(cancellationToken);
 
-        return Ok(taskOwners.Concat(caseOwners)
+        var detectedOwners = taskOwners.Concat(caseOwners)
             .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Where(x => x.Any(char.IsLetter))
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(x => x)
-            .ToArray());
+            .ToArray();
+        var owners = _settings.Members.Length > 0 ? _settings.Members : detectedOwners;
+        return Ok(owners.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToArray());
     }
 
     private bool CanViewTeam(string username, string displayName) =>

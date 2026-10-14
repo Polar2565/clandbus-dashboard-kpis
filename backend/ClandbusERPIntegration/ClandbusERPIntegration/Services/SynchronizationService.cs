@@ -70,7 +70,7 @@ public sealed class SynchronizationService(
         Category = Value(row, "CRCase_caseClassID", "ClassID", "CaseClass", "Category"),
         Status = Value(row, "CRCase_status", "Status"),
         Reason = Value(row, "CRCase_resolution", "Reason", "Resolution"),
-        Owner = Value(row, "CRCase_ownerID_description", "Owner", "OwnerEmployeeName"),
+        Owner = Value(row, "OwnerDisplayName", "CRCase_ownerID_description", "Owner", "OwnerEmployeeName", "CRCase_ownerID"),
         CreatedAt = Date(row, "CRCase_createdDateTime", "DateReported", "CreatedDateTime"),
         LastIncomingAt = Date(row, "CRActivityStatistics_lastIncomingActivityDate", "LastIncomingActivity"),
         LastOutgoingAt = Date(row, "CRActivityStatistics_lastOutgoingActivityDate", "LastOutgoingActivity"),

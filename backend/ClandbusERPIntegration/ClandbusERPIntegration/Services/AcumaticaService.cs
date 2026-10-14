@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Globalization;
 using ClandbusERPIntegration.Configurations;
 using ClandbusERPIntegration.DTOs;
@@ -196,9 +197,38 @@ namespace ClandbusERPIntegration.Services
         {
             if (!_isLoggedIn) throw new InvalidOperationException("ERP session is not active.");
             var tenant = Uri.EscapeDataString(_settings.Company);
-            return await GetRowsAsync(
+            var cases = await GetRowsAsync(
                 $"t/{tenant}/api/odata/gi/CR-Cases2018R1?$top=1000",
                 useBasicAuthentication: true);
+            IReadOnlyList<JsonElement> employees;
+            try
+            {
+                employees = await GetEntityRowsAsync("Employee");
+            }
+            catch
+            {
+                return cases;
+            }
+
+            var ownerNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var employee in employees)
+            {
+                var name = Value(employee, "EmployeeName", "DisplayName", "EmployeeID_description", "AcctName");
+                if (string.IsNullOrWhiteSpace(name)) continue;
+                foreach (var id in new[] { "ContactID", "OwnerID", "BAccountID", "EmployeeID" }
+                    .Select(field => Value(employee, field)).Where(id => !string.IsNullOrWhiteSpace(id)))
+                    ownerNames.TryAdd(id, name);
+            }
+
+            return cases.Select(row =>
+            {
+                var owner = FindOwnerProperty(row);
+                var ownerId = owner.HasValue ? ScalarValue(owner.Value.Value) : string.Empty;
+                var objectNode = JsonNode.Parse(row.GetRawText())?.AsObject();
+                if (objectNode is null) return row;
+                objectNode["OwnerDisplayName"] = ownerNames.GetValueOrDefault(ownerId, ownerId);
+                return JsonSerializer.Deserialize<JsonElement>(objectNode.ToJsonString());
+            }).ToArray();
         }
 
         public async Task<IReadOnlyList<JsonElement>> GetTasksAsync()

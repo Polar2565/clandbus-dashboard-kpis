@@ -299,7 +299,13 @@ public sealed class DashboardController(
     {
         if (string.IsNullOrWhiteSpace(owner)) return items;
         var normalizedOwner = Normalize(owner);
-        return items.Where(item => Normalize(selector(item)) == normalizedOwner).ToList();
+        return items.Where(item =>
+        {
+            var itemOwner = Normalize(selector(item));
+            return itemOwner == normalizedOwner
+                || itemOwner.StartsWith(normalizedOwner + " ", StringComparison.Ordinal)
+                || normalizedOwner.StartsWith(itemOwner + " ", StringComparison.Ordinal);
+        }).ToList();
     }
 
     private static IReadOnlyList<Dictionary<string, string>> ReadWorksheet(Stream input)

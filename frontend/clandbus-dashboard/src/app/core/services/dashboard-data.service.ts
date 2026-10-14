@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, forkJoin, of, switchMap } from 'rxjs';
+import { BehaviorSubject, catchError, forkJoin, of, switchMap } from 'rxjs';
 import { AcumaticaService } from './acumatica.service';
 
 export interface DashboardSummary {
@@ -67,7 +67,12 @@ export class DashboardDataService {
     this.api.getTeamAccess().subscribe({
       next: access => {
         this.canViewTeam$.next(access.canViewTeam);
-        if (access.canViewTeam) this.refreshOwners();
+        if (access.canViewTeam) {
+          const currentName = this.profile$.value?.displayName || '';
+          this.selectedOwner$.next(currentName);
+          this.refreshOwners();
+          this.loadLocal();
+        }
       },
       error: () => this.canViewTeam$.next(false)
     });
@@ -80,7 +85,12 @@ export class DashboardDataService {
     if (!silent) this.loading$.next(true);
     this.error$.next(''); this.status$.next('Sincronizando con Acumatica…');
     const owner = this.selectedOwner$.value;
-    this.api.synchronize().pipe(switchMap(() => forkJoin({ summary: this.api.getSummary(owner), cases: this.api.getCases(owner), tasks: this.api.getTasks(owner) }))).subscribe({
+    this.api.synchronize().pipe(
+      switchMap(() => this.canViewTeam$.value
+        ? this.api.importLatestTasks().pipe(catchError(() => of(null)))
+        : of(null)),
+      switchMap(() => forkJoin({ summary: this.api.getSummary(owner), cases: this.api.getCases(owner), tasks: this.api.getTasks(owner) }))
+    ).subscribe({
       next: (data: any) => {
         this.summary$.next({ ...EMPTY, ...data.summary }); this.cases$.next(data.cases || []); this.tasks$.next(data.tasks || []);
         this.loading$.next(false); this.status$.next(`Actualizado ${new Date().toLocaleString('es-MX')}`);
@@ -141,7 +151,11 @@ export class DashboardDataService {
 
   private refreshOwners() {
     this.api.getTeamOwners().subscribe({
-      next: owners => this.teamOwners$.next(owners),
+      next: owners => {
+        const currentName = this.profile$.value?.displayName || '';
+        const names = owners.includes(currentName) || !currentName ? owners : [...owners, currentName];
+        this.teamOwners$.next(names.sort((a, b) => a.localeCompare(b, 'es')));
+      },
       error: () => this.teamOwners$.next([])
     });
   }

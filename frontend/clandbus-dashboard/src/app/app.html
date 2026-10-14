@@ -8,7 +8,7 @@
       <label class="global-owner-filter" *ngIf="data.canViewTeam$ | async">
         <span>VISTA</span>
         <select [ngModel]="data.selectedOwner$ | async" (ngModelChange)="data.selectOwner($event)" aria-label="Seleccionar integrante">
-          <option value="">Todo el equipo</option>
+          <option value="" disabled>Selecciona una persona</option>
           <option *ngFor="let owner of data.teamOwners$ | async" [value]="owner">{{ owner }}</option>
         </select>
       </label>
