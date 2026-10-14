@@ -57,12 +57,12 @@ Agrega en `TeamDashboard:ExecutiveUsers` los usuarios o nombres exactos de Acuma
 | GET | `/api/Dashboard/cases` | Casos personales |
 | GET | `/api/Dashboard/tasks` | Tareas personales |
 | GET | `/api/Dashboard/trends?period=` | Tendencias |
-| GET | `/api/team-dashboard/access` | Indica si la cuenta puede ver al equipo |
-| GET | `/api/team-dashboard/report` | Consolidado autorizado por periodo e integrante |
+| GET | `/api/team-dashboard/access` | Indica si la cuenta puede filtrar por integrante |
+| GET | `/api/team-dashboard/owners` | Propietarios disponibles para el selector global |
 | GET/POST | `/api/Productivity/records` | Lista/crea bitácora |
 | PUT/DELETE | `/api/Productivity/records/{id}` | Actualiza/elimina registro propio |
 
-Salvo Salud y Login, las rutas personales requieren sesión. El reporte de equipo exige además que el usuario autenticado esté en la lista ejecutiva local.
+Salvo Salud y Login, las rutas personales requieren sesión. Los parámetros `owner` de Resumen, Casos, Tareas y Tendencias exigen además que el usuario autenticado esté en la lista ejecutiva local.
 
 ## Compilar
 

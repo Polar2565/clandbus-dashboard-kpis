@@ -46,24 +46,24 @@ export class AcumaticaService {
     );
   }
 
-  getSummary() {
+  getSummary(owner = '') {
     return this.http.get(
       'https://localhost:7004/api/Dashboard/summary',
-      { withCredentials: true }
+      { withCredentials: true, params: owner ? { owner } : {} }
     );
   }
 
-  getCases() {
+  getCases(owner = '') {
     return this.http.get(
       'https://localhost:7004/api/Dashboard/cases',
-      { withCredentials: true }
+      { withCredentials: true, params: owner ? { owner } : {} }
     );
   }
 
-  getTasks() {
+  getTasks(owner = '') {
     return this.http.get(
       'https://localhost:7004/api/Dashboard/tasks',
-      { withCredentials: true }
+      { withCredentials: true, params: owner ? { owner } : {} }
     );
   }
 
@@ -89,8 +89,11 @@ export class AcumaticaService {
     return this.http.get<any>(`${this.apiUrl}/me`, { withCredentials: true });
   }
 
-  getTrends(period: 'week' | 'month') {
-    return this.http.get<any[]>(`https://localhost:7004/api/Dashboard/trends?period=${period}`, { withCredentials: true });
+  getTrends(period: 'week' | 'month', owner = '') {
+    return this.http.get<any[]>('https://localhost:7004/api/Dashboard/trends', {
+      withCredentials: true,
+      params: owner ? { period, owner } : { period }
+    });
   }
 
   getTeamAccess() {
@@ -100,12 +103,10 @@ export class AcumaticaService {
     );
   }
 
-  getTeamReport(period: 'week' | 'month' | 'year' | 'history', userKey = '') {
-    const params: Record<string, string> = { period };
-    if (userKey) params['userKey'] = userKey;
-    return this.http.get<any>(
-      'https://localhost:7004/api/team-dashboard/report',
-      { withCredentials: true, params }
+  getTeamOwners() {
+    return this.http.get<string[]>(
+      'https://localhost:7004/api/team-dashboard/owners',
+      { withCredentials: true }
     );
   }
 

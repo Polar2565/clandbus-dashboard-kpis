@@ -16,7 +16,7 @@ Aplicación web independiente para consultar y analizar el trabajo personal y co
 - Productividad, evolución temporal, cumplimiento y bitácora profesional.
 - Exportación compatible con Excel y salida mediante impresión a PDF.
 - Historial SQL separado por `UserKey`.
-- Vista ejecutiva autorizada con consolidado semanal, mensual, anual e histórico del equipo.
+- Selector global autorizado para consultar Resumen, Casos, Tareas y Productividad por integrante o para todo el equipo.
 
 ## Arquitectura
 
@@ -118,7 +118,7 @@ Edita el nuevo `appsettings.Development.json` y reemplaza solamente los valores 
 
 `appsettings.Development.json` está ignorado por Git. Nunca pongas usuario, contraseña, cookie, URL privada o datos del cliente en el archivo de ejemplo versionado.
 
-La vista **Equipo** utiliza las capturas más recientes almacenadas en la misma base SQL. Cada integrante debe iniciar sesión y sincronizar sus datos al menos una vez. Solo las cuentas incluidas en `TeamDashboard:ExecutiveUsers` pueden consultar el consolidado; ocultar el enlace en Angular no sustituye esta validación del backend.
+El selector global utiliza el propietario incluido en los casos de Acumatica y en cada fila del Excel de tareas. Al sincronizar desde una cuenta ejecutiva, la API conserva los registros de todos los propietarios disponibles. Solo las cuentas incluidas en `TeamDashboard:ExecutiveUsers` pueden solicitar el filtro de otra persona; ocultar el selector en Angular no sustituye esta validación del backend.
 
 ### 3. Preparar SQL Server
 

@@ -192,6 +192,15 @@ namespace ClandbusERPIntegration.Services
             return rows.Where(IsCurrentOwner).ToArray();
         }
 
+        public async Task<IReadOnlyList<JsonElement>> GetAllCasesAsync()
+        {
+            if (!_isLoggedIn) throw new InvalidOperationException("ERP session is not active.");
+            var tenant = Uri.EscapeDataString(_settings.Company);
+            return await GetRowsAsync(
+                $"t/{tenant}/api/odata/gi/CR-Cases2018R1?$top=1000",
+                useBasicAuthentication: true);
+        }
+
         public async Task<IReadOnlyList<JsonElement>> GetTasksAsync()
         {
             // EP4040PL is backed by CRActivity records whose class is Task.

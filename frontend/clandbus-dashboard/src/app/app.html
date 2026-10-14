@@ -5,6 +5,13 @@
   <header class="topbar">
     <div class="page-context"><span>GESTIÓN DE SOPORTE</span><strong>{{ pageTitle() }}</strong></div>
     <div class="top-meta">
+      <label class="global-owner-filter" *ngIf="data.canViewTeam$ | async">
+        <span>VISTA</span>
+        <select [ngModel]="data.selectedOwner$ | async" (ngModelChange)="data.selectOwner($event)" aria-label="Seleccionar integrante">
+          <option value="">Todo el equipo</option>
+          <option *ngFor="let owner of data.teamOwners$ | async" [value]="owner">{{ owner }}</option>
+        </select>
+      </label>
       <div class="top-status"><span>{{ status$ | async }}</span></div>
       <div class="session-state" [class.online]="connected$ | async"><i></i><span>{{ (connected$ | async) ? 'Sesión activa' : 'Sin conexión' }}</span></div>
       <div class="top-actions"><button class="icon-button" *ngIf="connected$ | async" (click)="data.sync()" [disabled]="loading$ | async" title="Actualizar"><lucide-icon name="refresh-cw"></lucide-icon></button></div>
@@ -21,7 +28,6 @@
       <a routerLink="/tasks" routerLinkActive="active" title="Tareas"><lucide-icon name="circle-check-big"></lucide-icon><b>Tareas</b></a>
       <p><span>ANÁLISIS</span></p>
       <a routerLink="/productividad" routerLinkActive="active" title="Productividad"><lucide-icon name="chart-no-axes-combined"></lucide-icon><b>Productividad</b></a>
-      <a *ngIf="data.canViewTeam$ | async" routerLink="/equipo" routerLinkActive="active" title="Equipo"><lucide-icon name="users-round"></lucide-icon><b>Equipo</b></a>
       <a routerLink="/integracion" routerLinkActive="active" title="Integración"><lucide-icon name="network"></lucide-icon><b>Integración</b></a>
     </nav>
     <div class="sidebar-footer">

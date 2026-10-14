@@ -45,6 +45,31 @@
   align-items: center;
   gap: 12px;
 }
+.global-owner-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 5px 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f7fafc;
+}
+.global-owner-filter span {
+  color: var(--text-subtle);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+.global-owner-filter select {
+  width: 190px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+}
 .top-status {
   max-width: 440px;
   overflow: hidden;
@@ -586,6 +611,9 @@
   .top-status {
     display: none;
   }
+  .global-owner-filter select {
+    width: 145px;
+  }
   .content {
     min-width: 0;
     padding-inline: 20px;
@@ -643,6 +671,15 @@
   }
   .top-meta {
     margin-left: 0;
+  }
+  .global-owner-filter {
+    padding-left: 7px;
+  }
+  .global-owner-filter span {
+    display: none;
+  }
+  .global-owner-filter select {
+    width: 118px;
   }
   .session-state span {
     display: none;

@@ -23,6 +23,8 @@ export class DashboardDataService {
   readonly error$ = new BehaviorSubject('');
   readonly profile$ = new BehaviorSubject<UserProfile | null>(null);
   readonly canViewTeam$ = new BehaviorSubject(false);
+  readonly teamOwners$ = new BehaviorSubject<string[]>([]);
+  readonly selectedOwner$ = new BehaviorSubject('');
   readonly notification$ = new BehaviorSubject<AppNotification | null>(null);
   private timer?: ReturnType<typeof setInterval>;
   private notificationTimer?: ReturnType<typeof setTimeout>;
@@ -44,11 +46,13 @@ export class DashboardDataService {
     this.summary$.next(EMPTY); this.cases$.next([]); this.tasks$.next([]);
     this.connected$.next(false); this.profile$.next(null);
     this.canViewTeam$.next(false);
+    this.teamOwners$.next([]); this.selectedOwner$.next('');
     this.status$.next('Inicia sesión para consultar tus métricas');
   }
 
   loadLocal() {
-    forkJoin({ summary: this.api.getSummary(), cases: this.api.getCases(), tasks: this.api.getTasks() }).subscribe({
+    const owner = this.selectedOwner$.value;
+    forkJoin({ summary: this.api.getSummary(owner), cases: this.api.getCases(owner), tasks: this.api.getTasks(owner) }).subscribe({
       next: (data: any) => {
         this.summary$.next({ ...EMPTY, ...data.summary }); this.cases$.next(data.cases || []); this.tasks$.next(data.tasks || []);
         this.status$.next(data.summary?.lastSyncAt ? `Última captura ${new Date(data.summary.lastSyncAt).toLocaleString('es-MX')}` : 'Esperando primera sincronización');
@@ -61,7 +65,10 @@ export class DashboardDataService {
     if (profile) this.profile$.next(profile);
     this.connected$.next(true); this.loadLocal();
     this.api.getTeamAccess().subscribe({
-      next: access => this.canViewTeam$.next(access.canViewTeam),
+      next: access => {
+        this.canViewTeam$.next(access.canViewTeam);
+        if (access.canViewTeam) this.refreshOwners();
+      },
       error: () => this.canViewTeam$.next(false)
     });
     if (this.timer) clearInterval(this.timer);
@@ -72,10 +79,12 @@ export class DashboardDataService {
   sync(silent = false) {
     if (!silent) this.loading$.next(true);
     this.error$.next(''); this.status$.next('Sincronizando con Acumatica…');
-    this.api.synchronize().pipe(switchMap(() => forkJoin({ summary: this.api.getSummary(), cases: this.api.getCases(), tasks: this.api.getTasks() }))).subscribe({
+    const owner = this.selectedOwner$.value;
+    this.api.synchronize().pipe(switchMap(() => forkJoin({ summary: this.api.getSummary(owner), cases: this.api.getCases(owner), tasks: this.api.getTasks(owner) }))).subscribe({
       next: (data: any) => {
         this.summary$.next({ ...EMPTY, ...data.summary }); this.cases$.next(data.cases || []); this.tasks$.next(data.tasks || []);
         this.loading$.next(false); this.status$.next(`Actualizado ${new Date().toLocaleString('es-MX')}`);
+        if (this.canViewTeam$.value) this.refreshOwners();
       },
       error: () => {
         this.loading$.next(false); this.status$.next('Sesión activa; sincronización pendiente');
@@ -90,10 +99,11 @@ export class DashboardDataService {
     this.loading$.next(true);
     this.error$.next('');
     this.status$.next('Importando Tasks desde Excel…');
+    const owner = this.selectedOwner$.value;
     return this.api.importTasks(file).pipe(
       switchMap((result) => forkJoin({
-        result: of(result), summary: this.api.getSummary(),
-        cases: this.api.getCases(), tasks: this.api.getTasks()
+        result: of(result), summary: this.api.getSummary(owner),
+        cases: this.api.getCases(owner), tasks: this.api.getTasks(owner)
       }))
     );
   }
@@ -102,10 +112,11 @@ export class DashboardDataService {
     this.loading$.next(true);
     this.error$.next('');
     this.status$.next('Leyendo el Excel más reciente…');
+    const owner = this.selectedOwner$.value;
     return this.api.importLatestTasks().pipe(
       switchMap((result) => forkJoin({
-        result: of(result), summary: this.api.getSummary(),
-        cases: this.api.getCases(), tasks: this.api.getTasks()
+        result: of(result), summary: this.api.getSummary(owner),
+        cases: this.api.getCases(owner), tasks: this.api.getTasks(owner)
       }))
     );
   }
@@ -118,6 +129,21 @@ export class DashboardDataService {
     const imported = data.result?.imported ?? data.tasks?.length ?? 0;
     this.status$.next(`${imported} Tasks importadas desde Excel`);
     this.notify(`${imported} Tasks actualizadas correctamente.`, 'success');
+    if (this.canViewTeam$.value) this.refreshOwners();
+  }
+
+  selectOwner(owner: string) {
+    if (!this.canViewTeam$.value && owner) return;
+    this.selectedOwner$.next(owner);
+    this.status$.next(owner ? `Consultando a ${owner}…` : 'Consultando todo el equipo…');
+    this.loadLocal();
+  }
+
+  private refreshOwners() {
+    this.api.getTeamOwners().subscribe({
+      next: owners => this.teamOwners$.next(owners),
+      error: () => this.teamOwners$.next([])
+    });
   }
 
   disconnect() {

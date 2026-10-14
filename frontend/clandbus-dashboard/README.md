@@ -8,7 +8,7 @@ Cliente Angular 20 del tablero personal de soporte. Consume la API C# y nunca se
 - `/casos`: periodos, KPIs, estados, búsqueda y actividad de correo.
 - `/tasks`: KPIs, categorías, tareas vencidas y detalle.
 - `/productividad`: análisis, bitácora, reporte y rango personalizado.
-- `/equipo`: consolidado autorizado, comparación por periodo y resultado por integrante.
+- Selector superior global: cambia todas las pantallas entre todo el equipo y un propietario específico.
 - `/integracion`: sesión Acumatica, última captura y flujo de datos.
 
 ## Organización

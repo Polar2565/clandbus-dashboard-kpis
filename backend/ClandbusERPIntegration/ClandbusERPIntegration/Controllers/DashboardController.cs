@@ -1,9 +1,11 @@
 using ClandbusERPIntegration.Data;
+using ClandbusERPIntegration.Configurations;
 using ClandbusERPIntegration.DTOs;
 using ClandbusERPIntegration.Interfaces;
 using ClandbusERPIntegration.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -18,8 +20,10 @@ public sealed class DashboardController(
     IDbContextFactory<DashboardDbContext> dbFactory,
     ISynchronizationService synchronization,
     IAcumaticaSessionStore sessions,
-    IWebHostEnvironment environment) : ControllerBase
+    IWebHostEnvironment environment,
+    IOptions<TeamDashboardSettings> teamSettings) : ControllerBase
 {
+    private readonly TeamDashboardSettings _teamSettings = teamSettings.Value;
     private IAcumaticaService? Current => sessions.GetCurrent(HttpContext);
     private string UserKey => Current!.CurrentUsername.Trim().ToLowerInvariant();
     private string TaskImportFolder => Path.Combine(
@@ -30,7 +34,7 @@ public sealed class DashboardController(
     {
         var service = Current;
         if (service is null) return Unauthorized();
-        var result = await synchronization.SynchronizeAsync(service, cancellationToken);
+        var result = await synchronization.SynchronizeAsync(service, IsExecutive, cancellationToken);
         return Ok(new { result.CasesRead, result.TasksRead, result.FinishedAt });
     }
 
@@ -114,7 +118,7 @@ public sealed class DashboardController(
 
         var capturedAt = DateTimeOffset.Now;
         var tasks = rows
-            .Where(row => expectedOwners.Contains(Normalize(Field(row, "Propietario"))))
+            .Where(row => IsExecutive || expectedOwners.Contains(Normalize(Field(row, "Propietario"))))
             .Select((row, index) => new TaskSnapshot
             {
                 UserKey = userKey,
@@ -163,9 +167,12 @@ public sealed class DashboardController(
     }
 
     [HttpGet("summary")]
-    public async Task<ActionResult<DashboardSummaryDto>> Summary(CancellationToken cancellationToken)
+    public async Task<ActionResult<DashboardSummaryDto>> Summary(
+        [FromQuery] string? owner = null,
+        CancellationToken cancellationToken = default)
     {
         if (Current is null) return Unauthorized();
+        if (!CanUseOwnerFilter(owner)) return Forbid();
         var userKey = UserKey;
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
         var lastRun = await db.SyncRuns.Where(x => x.Succeeded && x.UserKey == userKey)
@@ -177,6 +184,8 @@ public sealed class DashboardController(
 
         var cases = await db.Cases.Where(x => x.UserKey == userKey && x.CapturedAt == lastRun.StartedAt).ToListAsync(cancellationToken);
         var tasks = await db.Tasks.Where(x => x.UserKey == userKey && x.CapturedAt == lastRun.StartedAt).ToListAsync(cancellationToken);
+        cases = FilterByOwner(cases, owner, x => x.Owner);
+        tasks = FilterByOwner(tasks, owner, x => x.Owner);
         var completed = tasks.Count(x => x.CompletionPercent >= 100
             || x.Status.Contains("Completed", StringComparison.OrdinalIgnoreCase)
             || x.Status.Contains("Complet", StringComparison.OrdinalIgnoreCase));
@@ -197,32 +206,45 @@ public sealed class DashboardController(
     }
 
     [HttpGet("cases")]
-    public async Task<IActionResult> Cases(CancellationToken cancellationToken)
+    public async Task<IActionResult> Cases(
+        [FromQuery] string? owner = null,
+        CancellationToken cancellationToken = default)
     {
         if (Current is null) return Unauthorized();
+        if (!CanUseOwnerFilter(owner)) return Forbid();
         var userKey = UserKey;
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
         var run = await db.SyncRuns.Where(x => x.Succeeded && x.UserKey == userKey).OrderByDescending(x => x.FinishedAt).FirstOrDefaultAsync(cancellationToken);
-        return Ok(run is null ? [] : await db.Cases.Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt)
-            .OrderByDescending(x => x.CreatedAt).ToListAsync(cancellationToken));
+        if (run is null) return Ok(Array.Empty<CaseSnapshot>());
+        var items = await db.Cases.Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt)
+            .OrderByDescending(x => x.CreatedAt).ToListAsync(cancellationToken);
+        return Ok(FilterByOwner(items, owner, x => x.Owner));
     }
 
     [HttpGet("tasks")]
-    public async Task<IActionResult> Tasks(CancellationToken cancellationToken)
+    public async Task<IActionResult> Tasks(
+        [FromQuery] string? owner = null,
+        CancellationToken cancellationToken = default)
     {
         if (Current is null) return Unauthorized();
+        if (!CanUseOwnerFilter(owner)) return Forbid();
         var userKey = UserKey;
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
         var run = await db.SyncRuns.Where(x => x.Succeeded && x.UserKey == userKey).OrderByDescending(x => x.FinishedAt).FirstOrDefaultAsync(cancellationToken);
-        return Ok(run is null ? [] : await db.Tasks.Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt)
-            .OrderBy(x => x.DueAt).ToListAsync(cancellationToken));
+        if (run is null) return Ok(Array.Empty<TaskSnapshot>());
+        var items = await db.Tasks.Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt)
+            .OrderBy(x => x.DueAt).ToListAsync(cancellationToken);
+        return Ok(FilterByOwner(items, owner, x => x.Owner));
     }
 
     [HttpGet("trends")]
     public async Task<ActionResult<IReadOnlyList<TrendPointDto>>> Trends(
-        [FromQuery] string period = "week", CancellationToken cancellationToken = default)
+        [FromQuery] string period = "week",
+        [FromQuery] string? owner = null,
+        CancellationToken cancellationToken = default)
     {
         if (Current is null) return Unauthorized();
+        if (!CanUseOwnerFilter(owner)) return Forbid();
         var userKey = UserKey;
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
         var run = await db.SyncRuns.Where(x => x.Succeeded && x.UserKey == userKey)
@@ -231,6 +253,8 @@ public sealed class DashboardController(
 
         var cases = await db.Cases.Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt).ToListAsync(cancellationToken);
         var tasks = await db.Tasks.Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt).ToListAsync(cancellationToken);
+        cases = FilterByOwner(cases, owner, x => x.Owner);
+        tasks = FilterByOwner(tasks, owner, x => x.Owner);
         var points = new List<TrendPointDto>();
         var today = DateTimeOffset.Now.Date;
 
@@ -264,6 +288,19 @@ public sealed class DashboardController(
         status.Contains("Closed", StringComparison.OrdinalIgnoreCase)
         || status.Contains("Cerrado", StringComparison.OrdinalIgnoreCase)
         || status.Contains("Released", StringComparison.OrdinalIgnoreCase);
+
+    private bool IsExecutive => Current is not null && _teamSettings.ExecutiveUsers.Any(allowed =>
+        allowed.Equals(Current.CurrentUsername, StringComparison.OrdinalIgnoreCase)
+        || allowed.Equals(Current.CurrentDisplayName, StringComparison.OrdinalIgnoreCase));
+
+    private bool CanUseOwnerFilter(string? owner) => string.IsNullOrWhiteSpace(owner) || IsExecutive;
+
+    private static List<T> FilterByOwner<T>(List<T> items, string? owner, Func<T, string> selector)
+    {
+        if (string.IsNullOrWhiteSpace(owner)) return items;
+        var normalizedOwner = Normalize(owner);
+        return items.Where(item => Normalize(selector(item)) == normalizedOwner).ToList();
+    }
 
     private static IReadOnlyList<Dictionary<string, string>> ReadWorksheet(Stream input)
     {

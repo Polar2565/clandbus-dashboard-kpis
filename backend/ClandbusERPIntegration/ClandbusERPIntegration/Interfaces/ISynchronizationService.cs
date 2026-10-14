@@ -4,5 +4,8 @@ namespace ClandbusERPIntegration.Interfaces;
 
 public interface ISynchronizationService
 {
-    Task<SyncRun> SynchronizeAsync(IAcumaticaService acumatica, CancellationToken cancellationToken = default);
+    Task<SyncRun> SynchronizeAsync(
+        IAcumaticaService acumatica,
+        bool includeTeamCases = false,
+        CancellationToken cancellationToken = default);
 }

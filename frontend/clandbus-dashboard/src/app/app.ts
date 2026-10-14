@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { DashboardDataService } from './core/services/dashboard-data.service';
 import { LoginComponent } from './features/login/login.component';
@@ -8,7 +9,7 @@ import { ToastNotificationComponent } from './shared/components/toast-notificati
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, LoginComponent, LucideAngularModule, ToastNotificationComponent],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, LoginComponent, LucideAngularModule, ToastNotificationComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
@@ -47,7 +48,7 @@ export class App {
     const segment = this.router.url.split('?')[0].split('/')[1] || 'resumen';
     const titles: Record<string, string> = {
       resumen: 'Resumen', casos: 'Casos', tasks: 'Tareas',
-      productividad: 'Productividad', equipo: 'Equipo', integracion: 'Integración'
+      productividad: 'Productividad', integracion: 'Integración'
     };
     return titles[segment] || 'Gestión de soporte';
   }

@@ -11,7 +11,10 @@ namespace ClandbusERPIntegration.Services;
 public sealed class SynchronizationService(
     IDbContextFactory<DashboardDbContext> dbFactory) : ISynchronizationService
 {
-    public async Task<SyncRun> SynchronizeAsync(IAcumaticaService acumatica, CancellationToken cancellationToken = default)
+    public async Task<SyncRun> SynchronizeAsync(
+        IAcumaticaService acumatica,
+        bool includeTeamCases = false,
+        CancellationToken cancellationToken = default)
     {
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
         var userKey = acumatica.CurrentUsername.Trim().ToLowerInvariant();
@@ -27,7 +30,9 @@ public sealed class SynchronizationService(
                 ? []
                 : await db.Tasks.AsNoTracking().Where(x => x.UserKey == userKey && x.CapturedAt == previousRun.StartedAt)
                     .ToListAsync(cancellationToken);
-            var cases = (await acumatica.GetCasesAsync())
+            var cases = (includeTeamCases
+                    ? await acumatica.GetAllCasesAsync()
+                    : await acumatica.GetCasesAsync())
                 .Select(x => MapCase(x, capturedAt)).ToArray();
             foreach (var item in cases) item.UserKey = userKey;
             var tasks = previousTasks.Select(x => new TaskSnapshot
