@@ -197,8 +197,8 @@ namespace ClandbusERPIntegration.Services
         {
             if (!_isLoggedIn) throw new InvalidOperationException("ERP session is not active.");
             var tenant = Uri.EscapeDataString(_settings.Company);
-            var cases = await GetRowsAsync(
-                $"t/{tenant}/api/odata/gi/CR-Cases2018R1?$top=1000",
+            var cases = await GetAllRowsAsync(
+                $"t/{tenant}/api/odata/gi/CR-Cases2018R1",
                 useBasicAuthentication: true);
             var ownerNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (var mapping in _settings.OwnerMappings)
@@ -234,6 +234,24 @@ namespace ClandbusERPIntegration.Services
                     objectNode["OwnerDisplayName"] = ownerName;
                 return JsonSerializer.Deserialize<JsonElement>(objectNode.ToJsonString());
             }).ToArray();
+        }
+
+        private async Task<IReadOnlyList<JsonElement>> GetAllRowsAsync(
+            string endpoint,
+            bool useBasicAuthentication,
+            int pageSize = 1000)
+        {
+            var rows = new List<JsonElement>();
+            for (var skip = 0; skip < 50_000; skip += pageSize)
+            {
+                var separator = endpoint.Contains('?') ? '&' : '?';
+                var page = await GetRowsAsync(
+                    $"{endpoint}{separator}$top={pageSize}&$skip={skip}",
+                    useBasicAuthentication);
+                rows.AddRange(page);
+                if (page.Count < pageSize) break;
+            }
+            return rows;
         }
 
         public async Task<IReadOnlyList<JsonElement>> GetTasksAsync()

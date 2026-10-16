@@ -216,7 +216,7 @@ public sealed class DashboardController(
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
         var run = await db.SyncRuns.Where(x => x.Succeeded && x.UserKey == userKey).OrderByDescending(x => x.FinishedAt).FirstOrDefaultAsync(cancellationToken);
         if (run is null) return Ok(Array.Empty<CaseSnapshot>());
-        var items = await db.Cases.Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt)
+        var items = await db.Cases.AsNoTracking().Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt)
             .OrderByDescending(x => x.CreatedAt).ToListAsync(cancellationToken);
         return Ok(FilterByOwner(items, owner, x => x.Owner));
     }
@@ -232,7 +232,7 @@ public sealed class DashboardController(
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
         var run = await db.SyncRuns.Where(x => x.Succeeded && x.UserKey == userKey).OrderByDescending(x => x.FinishedAt).FirstOrDefaultAsync(cancellationToken);
         if (run is null) return Ok(Array.Empty<TaskSnapshot>());
-        var items = await db.Tasks.Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt)
+        var items = await db.Tasks.AsNoTracking().Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt)
             .OrderBy(x => x.DueAt).ToListAsync(cancellationToken);
         return Ok(FilterByOwner(items, owner, x => x.Owner));
     }

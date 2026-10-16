@@ -96,6 +96,12 @@ using (var scope = app.Services.CreateScope())
         .GetRequiredService<IDbContextFactory<DashboardDbContext>>();
     await using var db = await factory.CreateDbContextAsync();
     await db.Database.EnsureCreatedAsync();
+    await db.Database.ExecuteSqlRawAsync("""
+        IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Cases_UserKey_CapturedAt' AND object_id = OBJECT_ID(N'[Cases]'))
+            CREATE INDEX [IX_Cases_UserKey_CapturedAt] ON [Cases] ([UserKey], [CapturedAt]);
+        IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Tasks_UserKey_CapturedAt' AND object_id = OBJECT_ID(N'[Tasks]'))
+            CREATE INDEX [IX_Tasks_UserKey_CapturedAt] ON [Tasks] ([UserKey], [CapturedAt]);
+        """);
 }
 
 app.Run();

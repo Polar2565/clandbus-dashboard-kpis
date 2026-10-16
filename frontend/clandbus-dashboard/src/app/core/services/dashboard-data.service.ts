@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, catchError, forkJoin, of, switchMap } from 'rxjs';
+import { BehaviorSubject, catchError, forkJoin, of, Subscription, switchMap } from 'rxjs';
 import { AcumaticaService } from './acumatica.service';
 
 export interface DashboardSummary {
@@ -28,6 +28,8 @@ export class DashboardDataService {
   readonly notification$ = new BehaviorSubject<AppNotification | null>(null);
   private timer?: ReturnType<typeof setInterval>;
   private notificationTimer?: ReturnType<typeof setTimeout>;
+  private loadRequestId = 0;
+  private loadSubscription?: Subscription;
 
   constructor(private api: AcumaticaService) {
     this.api.getCurrentUser().subscribe({
@@ -52,12 +54,17 @@ export class DashboardDataService {
 
   loadLocal() {
     const owner = this.selectedOwner$.value;
-    forkJoin({ summary: this.api.getSummary(owner), cases: this.api.getCases(owner), tasks: this.api.getTasks(owner) }).subscribe({
+    const requestId = ++this.loadRequestId;
+    this.loadSubscription?.unsubscribe();
+    this.loadSubscription = this.readDashboard(owner).subscribe({
       next: (data: any) => {
+        if (requestId !== this.loadRequestId) return;
         this.summary$.next({ ...EMPTY, ...data.summary }); this.cases$.next(data.cases || []); this.tasks$.next(data.tasks || []);
         this.status$.next(data.summary?.lastSyncAt ? `Última captura ${new Date(data.summary.lastSyncAt).toLocaleString('es-MX')}` : 'Esperando primera sincronización');
       },
-      error: () => this.status$.next('No fue posible leer la base local')
+      error: () => {
+        if (requestId === this.loadRequestId) this.status$.next('No fue posible leer la base local');
+      }
     });
   }
 
@@ -86,7 +93,7 @@ export class DashboardDataService {
       switchMap(() => this.canViewTeam$.value
         ? this.api.importLatestTasks().pipe(catchError(() => of(null)))
         : of(null)),
-      switchMap(() => forkJoin({ summary: this.api.getSummary(owner), cases: this.api.getCases(owner), tasks: this.api.getTasks(owner) }))
+      switchMap(() => this.readDashboard(owner))
     ).subscribe({
       next: (data: any) => {
         this.summary$.next({ ...EMPTY, ...data.summary }); this.cases$.next(data.cases || []); this.tasks$.next(data.tasks || []);
@@ -108,10 +115,7 @@ export class DashboardDataService {
     this.status$.next('Importando Tasks desde Excel…');
     const owner = this.selectedOwner$.value;
     return this.api.importTasks(file).pipe(
-      switchMap((result) => forkJoin({
-        result: of(result), summary: this.api.getSummary(owner),
-        cases: this.api.getCases(owner), tasks: this.api.getTasks(owner)
-      }))
+      switchMap((result) => this.readDashboard(owner, result))
     );
   }
 
@@ -121,10 +125,7 @@ export class DashboardDataService {
     this.status$.next('Leyendo el Excel más reciente…');
     const owner = this.selectedOwner$.value;
     return this.api.importLatestTasks().pipe(
-      switchMap((result) => forkJoin({
-        result: of(result), summary: this.api.getSummary(owner),
-        cases: this.api.getCases(owner), tasks: this.api.getTasks(owner)
-      }))
+      switchMap((result) => this.readDashboard(owner, result))
     );
   }
 
@@ -176,8 +177,18 @@ export class DashboardDataService {
     return !!a && !!b && (a === b || a.startsWith(`${b} `) || b.startsWith(`${a} `));
   }
 
+  private readDashboard(owner: string, result?: any) {
+    return forkJoin({
+      ...(result === undefined ? {} : { result: of(result) }),
+      summary: this.api.getSummary(owner).pipe(catchError(() => of(this.summary$.value))),
+      cases: this.api.getCases(owner).pipe(catchError(() => of(this.cases$.value))),
+      tasks: this.api.getTasks(owner).pipe(catchError(() => of(this.tasks$.value)))
+    });
+  }
+
   disconnect() {
     if (this.timer) clearInterval(this.timer);
+    this.loadSubscription?.unsubscribe();
     this.api.logout().subscribe();
     this.clearPrivateData();
     this.notify('Sesión cerrada correctamente.', 'info');

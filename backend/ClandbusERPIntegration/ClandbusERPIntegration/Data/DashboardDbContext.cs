@@ -13,8 +13,16 @@ public sealed class DashboardDbContext(DbContextOptions<DashboardDbContext> opti
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Las pantallas siempre consultan la captura mas reciente por usuario.
+        // Estos indices evitan recorrer todo el historial en cada carga.
+        modelBuilder.Entity<CaseSnapshot>()
+            .HasIndex(x => new { x.UserKey, x.CapturedAt })
+            .HasDatabaseName("IX_Cases_UserKey_CapturedAt");
         modelBuilder.Entity<CaseSnapshot>()
             .HasIndex(x => new { x.UserKey, x.CaseNumber, x.CapturedAt });
+        modelBuilder.Entity<TaskSnapshot>()
+            .HasIndex(x => new { x.UserKey, x.CapturedAt })
+            .HasDatabaseName("IX_Tasks_UserKey_CapturedAt");
         modelBuilder.Entity<TaskSnapshot>()
             .HasIndex(x => new { x.UserKey, x.ExternalId, x.CapturedAt });
         modelBuilder.Entity<SyncRun>().HasIndex(x => new { x.UserKey, x.FinishedAt });

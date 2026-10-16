@@ -31,6 +31,15 @@ public sealed class TeamDashboardController(
         if (current is null) return Unauthorized();
         if (!CanViewTeam(current.CurrentUsername, current.CurrentDisplayName)) return Forbid();
 
+        if (_settings.Members.Length > 0)
+        {
+            return Ok(_settings.Members
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(x => x)
+                .ToArray());
+        }
+
         var userKey = current.CurrentUsername.Trim().ToLowerInvariant();
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
         var run = await db.SyncRuns.AsNoTracking()
@@ -51,8 +60,7 @@ public sealed class TeamDashboardController(
             .Where(x => x.Any(char.IsLetter))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
-        var owners = _settings.Members.Length > 0 ? _settings.Members : detectedOwners;
-        return Ok(owners.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToArray());
+        return Ok(detectedOwners.OrderBy(x => x).ToArray());
     }
 
     private bool CanViewTeam(string username, string displayName) =>
