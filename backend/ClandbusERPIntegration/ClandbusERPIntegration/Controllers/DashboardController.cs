@@ -182,10 +182,12 @@ public sealed class DashboardController(
         if (lastRun is null)
             return Ok(new DashboardSummaryDto(0, 0, 0, 0, 0, 0, 0, 0, null));
 
-        var cases = await db.Cases.Where(x => x.UserKey == userKey && x.CapturedAt == lastRun.StartedAt).ToListAsync(cancellationToken);
-        var tasks = await db.Tasks.Where(x => x.UserKey == userKey && x.CapturedAt == lastRun.StartedAt).ToListAsync(cancellationToken);
-        cases = FilterByOwner(cases, owner, x => x.Owner);
-        tasks = FilterByOwner(tasks, owner, x => x.Owner);
+        var cases = await FilterCasesQuery(
+                db.Cases.AsNoTracking().Where(x => x.UserKey == userKey && x.CapturedAt == lastRun.StartedAt), owner)
+            .ToListAsync(cancellationToken);
+        var tasks = await FilterTasksQuery(
+                db.Tasks.AsNoTracking().Where(x => x.UserKey == userKey && x.CapturedAt == lastRun.StartedAt), owner)
+            .ToListAsync(cancellationToken);
         var completed = tasks.Count(x => x.CompletionPercent >= 100
             || x.Status.Contains("Completed", StringComparison.OrdinalIgnoreCase)
             || x.Status.Contains("Complet", StringComparison.OrdinalIgnoreCase));
@@ -216,9 +218,10 @@ public sealed class DashboardController(
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
         var run = await db.SyncRuns.Where(x => x.Succeeded && x.UserKey == userKey).OrderByDescending(x => x.FinishedAt).FirstOrDefaultAsync(cancellationToken);
         if (run is null) return Ok(Array.Empty<CaseSnapshot>());
-        var items = await db.Cases.AsNoTracking().Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt)
+        var items = await FilterCasesQuery(
+                db.Cases.AsNoTracking().Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt), owner)
             .OrderByDescending(x => x.CreatedAt).ToListAsync(cancellationToken);
-        return Ok(FilterByOwner(items, owner, x => x.Owner));
+        return Ok(items);
     }
 
     [HttpGet("tasks")]
@@ -232,9 +235,10 @@ public sealed class DashboardController(
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
         var run = await db.SyncRuns.Where(x => x.Succeeded && x.UserKey == userKey).OrderByDescending(x => x.FinishedAt).FirstOrDefaultAsync(cancellationToken);
         if (run is null) return Ok(Array.Empty<TaskSnapshot>());
-        var items = await db.Tasks.AsNoTracking().Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt)
+        var items = await FilterTasksQuery(
+                db.Tasks.AsNoTracking().Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt), owner)
             .OrderBy(x => x.DueAt).ToListAsync(cancellationToken);
-        return Ok(FilterByOwner(items, owner, x => x.Owner));
+        return Ok(items);
     }
 
     [HttpGet("trends")]
@@ -251,10 +255,12 @@ public sealed class DashboardController(
             .OrderByDescending(x => x.FinishedAt).FirstOrDefaultAsync(cancellationToken);
         if (run is null) return Ok(Array.Empty<TrendPointDto>());
 
-        var cases = await db.Cases.Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt).ToListAsync(cancellationToken);
-        var tasks = await db.Tasks.Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt).ToListAsync(cancellationToken);
-        cases = FilterByOwner(cases, owner, x => x.Owner);
-        tasks = FilterByOwner(tasks, owner, x => x.Owner);
+        var cases = await FilterCasesQuery(
+                db.Cases.AsNoTracking().Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt), owner)
+            .ToListAsync(cancellationToken);
+        var tasks = await FilterTasksQuery(
+                db.Tasks.AsNoTracking().Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt), owner)
+            .ToListAsync(cancellationToken);
         var points = new List<TrendPointDto>();
         var today = DateTimeOffset.Now.Date;
 
@@ -294,6 +300,20 @@ public sealed class DashboardController(
         || allowed.Equals(Current.CurrentDisplayName, StringComparison.OrdinalIgnoreCase));
 
     private bool CanUseOwnerFilter(string? owner) => string.IsNullOrWhiteSpace(owner) || IsExecutive;
+
+    private static IQueryable<CaseSnapshot> FilterCasesQuery(IQueryable<CaseSnapshot> query, string? owner)
+    {
+        if (string.IsNullOrWhiteSpace(owner)) return query;
+        var value = owner.Trim();
+        return query.Where(x => x.Owner == value || x.Owner.StartsWith(value + " "));
+    }
+
+    private static IQueryable<TaskSnapshot> FilterTasksQuery(IQueryable<TaskSnapshot> query, string? owner)
+    {
+        if (string.IsNullOrWhiteSpace(owner)) return query;
+        var value = owner.Trim();
+        return query.Where(x => x.Owner == value || x.Owner.StartsWith(value + " "));
+    }
 
     private static List<T> FilterByOwner<T>(List<T> items, string? owner, Func<T, string> selector)
     {
