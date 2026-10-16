@@ -232,14 +232,16 @@ public sealed class DashboardController(
 
         // LocalDB atiende mejor estas lecturas de forma secuencial. Además, esta
         // ruta evita que el cliente consulte tres veces la misma captura.
-        var cases = await FilterCasesQuery(
-                db.Cases.AsNoTracking().Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt), owner)
+        var allCases = await db.Cases.AsNoTracking()
+            .Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt)
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(cancellationToken);
-        var tasks = await FilterTasksQuery(
-                db.Tasks.AsNoTracking().Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt), owner)
+        var allTasks = await db.Tasks.AsNoTracking()
+            .Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt)
             .OrderBy(x => x.DueAt)
             .ToListAsync(cancellationToken);
+        var cases = FilterByOwner(allCases, owner, x => x.Owner);
+        var tasks = FilterByOwner(allTasks, owner, x => x.Owner);
 
         var completed = tasks.Count(x => x.CompletionPercent >= 100
             || x.Status.Contains("Completed", StringComparison.OrdinalIgnoreCase)
