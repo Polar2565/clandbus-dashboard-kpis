@@ -56,14 +56,20 @@ export class DashboardDataService {
     const owner = this.selectedOwner$.value;
     const requestId = ++this.loadRequestId;
     this.loadSubscription?.unsubscribe();
+    this.clearDashboardView();
+    this.loading$.next(true);
     this.loadSubscription = this.readDashboard(owner).subscribe({
       next: (data: any) => {
         if (requestId !== this.loadRequestId) return;
         this.summary$.next({ ...EMPTY, ...data.summary }); this.cases$.next(data.cases || []); this.tasks$.next(data.tasks || []);
+        this.loading$.next(false);
         this.status$.next(data.summary?.lastSyncAt ? `Última captura ${new Date(data.summary.lastSyncAt).toLocaleString('es-MX')}` : 'Esperando primera sincronización');
       },
       error: () => {
-        if (requestId === this.loadRequestId) this.status$.next('No fue posible leer la base local');
+        if (requestId === this.loadRequestId) {
+          this.loading$.next(false);
+          this.status$.next('No fue posible leer la base local');
+        }
       }
     });
   }
@@ -142,6 +148,7 @@ export class DashboardDataService {
 
   selectOwner(owner: string) {
     if (!this.canViewTeam$.value && owner) return;
+    if (owner === this.selectedOwner$.value) return;
     this.selectedOwner$.next(owner);
     this.status$.next(owner ? `Consultando a ${owner}…` : 'Consultando todo el equipo…');
     this.loadLocal();
@@ -180,10 +187,16 @@ export class DashboardDataService {
   private readDashboard(owner: string, result?: any) {
     return forkJoin({
       ...(result === undefined ? {} : { result: of(result) }),
-      summary: this.api.getSummary(owner).pipe(catchError(() => of(this.summary$.value))),
-      cases: this.api.getCases(owner).pipe(catchError(() => of(this.cases$.value))),
-      tasks: this.api.getTasks(owner).pipe(catchError(() => of(this.tasks$.value)))
+      summary: this.api.getSummary(owner).pipe(catchError(() => of({ ...EMPTY }))),
+      cases: this.api.getCases(owner).pipe(catchError(() => of([]))),
+      tasks: this.api.getTasks(owner).pipe(catchError(() => of([])))
     });
+  }
+
+  private clearDashboardView() {
+    this.summary$.next({ ...EMPTY });
+    this.cases$.next([]);
+    this.tasks$.next([]);
   }
 
   disconnect() {
