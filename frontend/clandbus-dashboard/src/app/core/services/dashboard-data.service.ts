@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, catchError, forkJoin, of, Subscription, switchMap } from 'rxjs';
+import { BehaviorSubject, catchError, map, of, Subscription, switchMap } from 'rxjs';
 import { AcumaticaService } from './acumatica.service';
 
 export interface DashboardSummary {
@@ -185,12 +185,13 @@ export class DashboardDataService {
   }
 
   private readDashboard(owner: string, result?: any) {
-    return forkJoin({
-      ...(result === undefined ? {} : { result: of(result) }),
-      summary: this.api.getSummary(owner).pipe(catchError(() => of({ ...EMPTY }))),
-      cases: this.api.getCases(owner).pipe(catchError(() => of([]))),
-      tasks: this.api.getTasks(owner).pipe(catchError(() => of([])))
-    });
+    return this.api.getDashboardView(owner).pipe(
+      map(data => result === undefined ? data : { ...data, result }),
+      catchError(() => of({
+        ...(result === undefined ? {} : { result }),
+        summary: { ...EMPTY }, cases: [], tasks: []
+      }))
+    );
   }
 
   private clearDashboardView() {

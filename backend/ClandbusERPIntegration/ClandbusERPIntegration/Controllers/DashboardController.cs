@@ -207,6 +207,60 @@ public sealed class DashboardController(
             lastRun.FinishedAt));
     }
 
+    [HttpGet("view")]
+    public async Task<IActionResult> View(
+        [FromQuery] string? owner = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (Current is null) return Unauthorized();
+        if (!CanUseOwnerFilter(owner)) return Forbid();
+
+        var userKey = UserKey;
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+        var run = await db.SyncRuns.AsNoTracking()
+            .Where(x => x.Succeeded && x.UserKey == userKey)
+            .OrderByDescending(x => x.FinishedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (run is null)
+            return Ok(new
+            {
+                summary = new DashboardSummaryDto(0, 0, 0, 0, 0, 0, 0, 0, null),
+                cases = Array.Empty<CaseSnapshot>(),
+                tasks = Array.Empty<TaskSnapshot>()
+            });
+
+        // LocalDB atiende mejor estas lecturas de forma secuencial. Además, esta
+        // ruta evita que el cliente consulte tres veces la misma captura.
+        var cases = await FilterCasesQuery(
+                db.Cases.AsNoTracking().Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt), owner)
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync(cancellationToken);
+        var tasks = await FilterTasksQuery(
+                db.Tasks.AsNoTracking().Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt), owner)
+            .OrderBy(x => x.DueAt)
+            .ToListAsync(cancellationToken);
+
+        var completed = tasks.Count(x => x.CompletionPercent >= 100
+            || x.Status.Contains("Completed", StringComparison.OrdinalIgnoreCase)
+            || x.Status.Contains("Complet", StringComparison.OrdinalIgnoreCase));
+        var now = DateTimeOffset.Now;
+        var summary = new DashboardSummaryDto(
+            cases.Count(x => !IsClosed(x.Status)),
+            cases.Count(x => x.Status.Contains("Open", StringComparison.OrdinalIgnoreCase)
+                || x.Status.Contains("Abierto", StringComparison.OrdinalIgnoreCase)),
+            cases.Count(x => x.Status.Contains("Pending", StringComparison.OrdinalIgnoreCase)
+                || x.Status.Contains("Pendiente", StringComparison.OrdinalIgnoreCase)),
+            cases.Count(x => IsClosed(x.Status)),
+            tasks.Count - completed,
+            completed,
+            tasks.Count(x => x.DueAt < now && x.CompletionPercent < 100),
+            tasks.Count == 0 ? 0 : Math.Round(tasks.Average(x => x.CompletionPercent), 1),
+            run.FinishedAt);
+
+        return Ok(new { summary, cases, tasks });
+    }
+
     [HttpGet("cases")]
     public async Task<IActionResult> Cases(
         [FromQuery] string? owner = null,

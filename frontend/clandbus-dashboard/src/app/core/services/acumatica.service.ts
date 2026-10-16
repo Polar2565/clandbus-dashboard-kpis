@@ -53,6 +53,13 @@ export class AcumaticaService {
     );
   }
 
+  getDashboardView(owner = '') {
+    return this.http.get<any>(
+      'https://localhost:7004/api/Dashboard/view',
+      { withCredentials: true, params: owner ? { owner } : {} }
+    );
+  }
+
   getCases(owner = '') {
     return this.http.get(
       'https://localhost:7004/api/Dashboard/cases',
