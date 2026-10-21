@@ -217,6 +217,7 @@ La suite actual contiene 9 pruebas Angular. La sincronización real requiere una
 
 ## Documentación
 
+- [Guía para asistentes de IA](README_IA.md)
 - [Backend](backend/ClandbusERPIntegration/README.md)
 - [Frontend](frontend/clandbus-dashboard/README.md)
 - [Seguridad](SECURITY.md)
