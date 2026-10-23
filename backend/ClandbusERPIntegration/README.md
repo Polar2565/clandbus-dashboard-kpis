@@ -6,7 +6,7 @@ API ASP.NET Core 8 que autentica contra Acumatica, mantiene sesiones aisladas po
 
 - Login, perfil y logout de Acumatica.
 - Cookie local HTTP-only y cliente REST independiente por sesión.
-- Sincronización de casos y tareas del usuario.
+- Sincronización de casos desde Acumatica y tareas desde la exportación Excel.
 - Importación del Excel más reciente desde `App_Data/TaskImports`.
 - Persistencia por `UserKey` y bitácora profesional.
 - Resumen, tendencias y productividad.
@@ -54,6 +54,7 @@ Agrega en `TeamDashboard:ExecutiveUsers` los usuarios o nombres exactos de Acuma
 | POST | `/api/Dashboard/import-latest-tasks` | Importa Excel más reciente |
 | GET | `/api/Dashboard/task-import-folder` | Carpeta de importación |
 | GET | `/api/Dashboard/summary` | KPIs personales |
+| GET | `/api/Dashboard/view` | Entrega resumen, casos y tareas en una sola respuesta |
 | GET | `/api/Dashboard/cases` | Casos personales |
 | GET | `/api/Dashboard/tasks` | Tareas personales |
 | GET | `/api/Dashboard/trends?period=` | Tendencias |
@@ -62,7 +63,19 @@ Agrega en `TeamDashboard:ExecutiveUsers` los usuarios o nombres exactos de Acuma
 | GET/POST | `/api/Productivity/records` | Lista/crea bitácora |
 | PUT/DELETE | `/api/Productivity/records/{id}` | Actualiza/elimina registro propio |
 
-Salvo Salud y Login, las rutas personales requieren sesión. Los parámetros `owner` de Resumen, Casos, Tareas y Tendencias exigen además que el usuario autenticado esté en la lista ejecutiva local.
+Salvo Salud y Login, las rutas personales requieren sesión. Los parámetros `owner` de Resumen, Vista, Casos, Tareas, Tendencias y Bitácora exigen además que el usuario autenticado esté en la lista ejecutiva local.
+
+Angular utiliza normalmente `/api/Dashboard/view` para reducir viajes HTTP al cambiar de integrante. El filtro `owner` se aplica en SQL sobre la captura más reciente; la API no carga primero toda la información del equipo en memoria. Los endpoints separados se conservan para integraciones y diagnóstico.
+
+## Flujo de datos
+
+- Los casos se consultan actualmente mediante el Generic Inquiry `CR-Cases2018R1` de Acumatica y se guardan como una captura SQL.
+- Las tareas se importan desde el `.xlsx` más reciente de `App_Data/TaskImports`; los archivos reales están ignorados por Git.
+- Una sincronización conserva la captura anterior si Acumatica rechaza la consulta, evitando presentar datos de otro usuario como respaldo.
+- Las cuentas incluidas en `TeamDashboard:ExecutiveUsers` pueden sincronizar el conjunto del equipo y después filtrar por nombres canónicos.
+- `OwnerMappings` relaciona identificadores de Acumatica con los nombres visibles del selector.
+
+La versión de `Acumatica:EndpointVersion` debe coincidir con el endpoint publicado en cada instalación. No la actualices únicamente por cambiar la versión del ERP: valida primero `Case`, `Task`, `Activity` y `Employee` con consultas de solo lectura.
 
 ## Compilar
 
@@ -81,3 +94,4 @@ Entity Framework administra snapshots, sincronizaciones y registros profesionale
 - **SQL:** verifica LocalDB, cadena y migración.
 - **Excel:** confirma `.xlsx`, carpeta y columnas esperadas.
 - **Acumatica:** revisa URL, versión, permisos y conectividad.
+- **Cambio de integrante lento o incorrecto:** revisa `/api/Dashboard/view?owner=...`, la captura más reciente y los mapeos; nunca reutilices la respuesta tardía del integrante anterior.
