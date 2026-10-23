@@ -56,17 +56,19 @@ ClandbusDashboard/
 
 | Rama | Propósito | Recomendación |
 | --- | --- | --- |
-| `main` | Versión estable y revisada | Integrar únicamente mediante Pull Request |
+| `main` | Versión estable y revisada | Integrar únicamente mediante Merge Request o Pull Request |
 | `desarrollo` | Pruebas, integración y validación | Usarla antes de promover cambios a `main` |
 
 Para descargar únicamente la versión de desarrollo:
 
 ```powershell
-git clone --branch desarrollo --single-branch https://github.com/Polar2565/clandbus-dashboard-kpis.git
+git clone --branch desarrollo --single-branch https://gitlab.com/javier.solis.clandbus/clandbus-dashboard-kpis.git
 cd clandbus-dashboard-kpis
 ```
 
-Nunca incluyas configuraciones locales, URLs privadas, credenciales, cookies, archivos Excel reales o datos de clientes en commits, ramas, Issues o Pull Requests. Las reglas automáticas de GitHub mantienen protegida la rama `main`.
+Nunca incluyas configuraciones locales, URLs privadas, credenciales, cookies, archivos Excel reales o datos de clientes en commits, ramas, Issues, Merge Requests o Pull Requests. Mantén protegida la rama `main` en ambos servicios.
+
+El repositorio de GitLab es privado. Cada colaborador debe iniciar sesión con una cuenta a la que Javier Solís haya concedido acceso; no se deben compartir usuarios, contraseñas ni tokens personales para clonarlo.
 
 ## Requisitos mínimos
 
@@ -87,7 +89,7 @@ Visual Studio 2022 con la carga de trabajo **ASP.NET y desarrollo web** y Visual
 ### 1. Clonar y abrir el proyecto
 
 ```powershell
-git clone https://github.com/Polar2565/clandbus-dashboard-kpis.git
+git clone --branch desarrollo https://gitlab.com/javier.solis.clandbus/clandbus-dashboard-kpis.git
 cd clandbus-dashboard-kpis
 ```
 
@@ -222,9 +224,12 @@ La suite actual contiene 9 pruebas Angular. La sincronización real requiere una
 - [Frontend](frontend/clandbus-dashboard/README.md)
 - [Seguridad](SECURITY.md)
 
-## Repositorio
+## Repositorios
 
-Este proyecto se mantiene en [Polar2565/clandbus-dashboard-kpis](https://github.com/Polar2565/clandbus-dashboard-kpis). Es un repositorio independiente y no modifica integraciones o repositorios anteriores.
+- [GitLab personal de Javier Solís](https://gitlab.com/javier.solis.clandbus/clandbus-dashboard-kpis): repositorio privado para compartir el proyecto con colaboradores autorizados.
+- [GitHub Polar2565](https://github.com/Polar2565/clandbus-dashboard-kpis): repositorio remoto original y espejo del desarrollo.
+
+Ambos remotos deben conservar el mismo historial. En la copia de trabajo de Javier, `origin` apunta a GitHub y `gitlab` apunta a GitLab. El proyecto es independiente y no modifica integraciones ni repositorios anteriores.
 
 ---
 

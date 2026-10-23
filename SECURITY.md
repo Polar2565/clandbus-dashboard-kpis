@@ -47,7 +47,7 @@ Al reiniciar el backend se pierden las sesiones almacenadas en memoria y el usua
 
 ## Cómo informar una vulnerabilidad
 
-Informa cualquier vulnerabilidad o posible exposición de datos de manera privada al propietario del repositorio mediante la opción **Security → Report a vulnerability** de GitHub, cuando esté habilitada, o mediante un canal privado acordado con el titular.
+Informa cualquier vulnerabilidad o posible exposición de datos de manera privada al propietario del repositorio. En GitLab utiliza un Issue confidencial cuando esté habilitado; en GitHub utiliza **Security → Report a vulnerability**. También puede emplearse un canal privado acordado con el titular.
 
 Incluye una descripción clara, los pasos para reproducir el problema y su posible impacto. No adjuntes contraseñas, cookies, archivos de clientes ni datos reales del ERP.
 

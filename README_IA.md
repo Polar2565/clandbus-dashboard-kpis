@@ -82,12 +82,12 @@ No es necesario instalar Angular CLI globalmente. El proyecto utiliza la versió
 ## Clonación recomendada
 
 ```powershell
-git clone --branch desarrollo --single-branch https://github.com/Polar2565/clandbus-dashboard-kpis.git
+git clone --branch desarrollo --single-branch https://gitlab.com/javier.solis.clandbus/clandbus-dashboard-kpis.git
 cd clandbus-dashboard-kpis
 git status --short --branch
 ```
 
-La salida debe indicar la rama `desarrollo` y no mostrar archivos modificados.
+El repositorio de GitLab es privado. La persona debe autenticarse con su propia cuenta autorizada; la IA no debe pedir, copiar ni guardar contraseñas o tokens personales. La salida debe indicar la rama `desarrollo` y no mostrar archivos modificados.
 
 ## Configuración local del backend
 
@@ -312,6 +312,8 @@ git pull origin desarrollo
 git status --short
 ```
 
+Primero consulta `git remote -v`. En una clonación hecha desde GitLab, `origin` será GitLab. En la copia de trabajo del propietario pueden existir dos remotos: `origin` para GitHub y `gitlab` para GitLab. No cambies, renombres ni agregues remotos sin autorización explícita y sin confirmar antes la URL completa.
+
 Después:
 
 1. reproduce el problema;
@@ -321,7 +323,7 @@ Después:
 5. valida manualmente el flujo afectado;
 6. revisa que no haya secretos o datos operativos;
 7. crea una rama de trabajo cuando el cambio no sea trivial;
-8. integra mediante Pull Request.
+8. integra mediante Merge Request en GitLab o Pull Request en GitHub, según el remoto acordado.
 
 No promociones cambios a `main` sin revisión.
 
