@@ -74,24 +74,6 @@ export class AcumaticaService {
     );
   }
 
-  importTasks(file: File) {
-    const form = new FormData();
-    form.append('file', file, file.name);
-    return this.http.post<any>(
-      'https://localhost:7004/api/Dashboard/import-tasks',
-      form,
-      { withCredentials: true }
-    );
-  }
-
-  importLatestTasks() {
-    return this.http.post<any>(
-      'https://localhost:7004/api/Dashboard/import-latest-tasks',
-      {},
-      { withCredentials: true }
-    );
-  }
-
   getCurrentUser() {
     return this.http.get<any>(`${this.apiUrl}/me`, { withCredentials: true });
   }

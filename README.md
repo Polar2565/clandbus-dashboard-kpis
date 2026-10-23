@@ -1,6 +1,6 @@
 # ClandBus Dashboard de Gestión de Soporte
 
-Aplicación web independiente para consultar y analizar el trabajo personal y consolidado del equipo registrado en Acumatica. Integra casos, tareas importadas desde Excel, métricas operativas, productividad y una bitácora profesional.
+Aplicación web independiente para consultar y analizar el trabajo personal y consolidado del equipo registrado en Acumatica. Integra casos, tareas, métricas operativas, productividad y una bitácora profesional.
 
 > El repositorio no contiene la URL privada del ERP, credenciales, archivos Excel reales ni datos de clientes. Cada instalación debe aportar su propia configuración local.
 
@@ -9,7 +9,7 @@ Aplicación web independiente para consultar y analizar el trabajo personal y co
 - Inicio y cierre de sesión contra Acumatica sin guardar la contraseña.
 - Sesiones aisladas por navegador mediante cookie HTTP-only.
 - Sincronización de casos asociados al usuario autenticado.
-- Importación automática del Excel más reciente desde una carpeta interna.
+- Sincronización directa de casos, tareas e integrantes mediante endpoints REST de Acumatica.
 - Filtros por día, semana, mes, trimestre, año, histórico y rango personalizado.
 - KPIs interactivos con el detalle de los registros que los componen.
 - Distribución de casos por estado y tareas por categoría.
@@ -25,8 +25,6 @@ flowchart LR
     UI[Angular 20<br/>localhost:4200] -->|HTTPS + cookie| API[ASP.NET Core 8<br/>localhost:7004]
     API -->|REST + sesión| ERP[Acumatica]
     API --> DB[(SQL Server)]
-    XLSX[Excel de tareas] --> F[App_Data/TaskImports]
-    F --> API
 ```
 
 El navegador nunca accede directamente a Acumatica ni a SQL Server. El backend autentica, conserva la sesión, filtra por usuario y expone únicamente los datos necesarios para Angular.
@@ -80,7 +78,7 @@ El repositorio de GitLab es privado. Cada colaborador debe iniciar sesión con u
 | Base de datos | SQL Server 2019+ o SQL Server Express LocalDB |
 | Navegador | Chrome o Edge actualizado |
 | ERP | Una instancia de Acumatica accesible y una cuenta autorizada |
-| Datos de tareas | Exportación `.xlsx` de la pantalla Tareas de Acumatica |
+| Datos de tareas | Endpoint `Task` publicado y autorizado en Acumatica |
 
 Visual Studio 2022 con la carga de trabajo **ASP.NET y desarrollo web** y Visual Studio Code son opcionales. También es posible ejecutar todo desde PowerShell.
 
@@ -113,7 +111,7 @@ Edita el nuevo `appsettings.Development.json` y reemplaza solamente los valores 
 | `Acumatica:BaseUrl` | URL base privada de tu instancia, terminada en `/` |
 | `Acumatica:EndpointVersion` | Versión del endpoint publicado en tu ERP |
 | `Acumatica:PreferDefaultCaseEndpoint` | `true` consulta `Default/{EndpointVersion}/Case`; si el endpoint no responde, conserva el Generic Inquiry como respaldo |
-| `Acumatica:PreferDefaultTaskEndpoint` | `true` obtiene las tareas desde `Default/{EndpointVersion}/Task`; el Excel queda como respaldo manual |
+| `Acumatica:PreferDefaultTaskEndpoint` | `true` obtiene las tareas desde `Default/{EndpointVersion}/Task` |
 | `Acumatica:PreferEmployeeDirectory` | `true` obtiene el directorio activo desde `Default/{EndpointVersion}/Employee` |
 | `Acumatica:Company` | Tenant o compañía exacta de Acumatica |
 | `Acumatica:Branch` | Sucursal, o una cadena vacía si no aplica |
@@ -125,7 +123,7 @@ Edita el nuevo `appsettings.Development.json` y reemplaza solamente los valores 
 
 La sesión se valida siempre contra el backend y se cierra después de 30 minutos sin actividad. Las credenciales y cookies de Acumatica no se persisten; reiniciar la API requiere iniciar sesión nuevamente.
 
-El selector global utiliza el propietario incluido en los casos de Acumatica y en cada fila del Excel de tareas. Al sincronizar desde una cuenta ejecutiva, la API conserva los registros de todos los propietarios disponibles. Solo las cuentas incluidas en `TeamDashboard:ExecutiveUsers` pueden solicitar el filtro de otra persona; ocultar el selector en Angular no sustituye esta validación del backend.
+El selector global utiliza los propietarios incluidos en los casos y tareas de Acumatica. Al sincronizar desde una cuenta ejecutiva, la API conserva los registros de todos los propietarios disponibles. Solo las cuentas incluidas en `TeamDashboard:ExecutiveUsers` pueden solicitar el filtro de otra persona; ocultar el selector en Angular no sustituye esta validación del backend.
 
 ### 3. Preparar SQL Server
 
@@ -162,26 +160,12 @@ npm start
 
 Abre `http://127.0.0.1:4200`. La API queda en `https://localhost:7004`, Swagger en `/swagger` y Salud en `/api/Health`.
 
-### 6. Descargar y preparar el Excel de tareas
-
-La API obtiene los casos directamente de Acumatica, pero las tareas se cargan desde una exportación de Excel:
-
-1. En Acumatica abre la pantalla **Tareas**.
-2. Aplica el alcance que quieras analizar y exporta los registros como `.xlsx`.
-3. Conserva los encabezados originales. El importador utiliza, entre otros: `Resumen`, `Estado`, `(%) Terminado`, `Fecha de Inicio`, `Fecha Vencimiento`, `Categoría`, `Propietario` y `Entidad Relacionada`.
-4. Copia el archivo a `backend\ClandbusERPIntegration\ClandbusERPIntegration\App_Data\TaskImports`.
-5. Si la carpeta todavía no existe, créala. La API también la crea automáticamente en el primer intento de importación.
-6. No renombres el archivo para reemplazar otro: puedes conservar varias exportaciones. El botón **Actualizar tareas** selecciona automáticamente el `.xlsx` cuya fecha de modificación sea más reciente.
-
-Los `.xlsx` de esa carpeta están excluidos por `.gitignore`; nunca deben subirse porque pueden contener datos personales u operativos.
-
-### 7. Primera carga de información
+### 6. Primera carga de información
 
 1. Abre `http://127.0.0.1:4200` e inicia sesión con una cuenta autorizada de Acumatica.
-2. En **Integración**, pulsa **Sincronizar ahora** para obtener únicamente los casos asociados al usuario autenticado.
-3. En **Tareas**, pulsa **Actualizar tareas** para consumir el Excel más reciente de la carpeta interna.
-4. Comprueba que Resumen, Casos, Tareas y Productividad tengan información.
-5. Si aparecen ceros, verifica el propietario del Excel, los permisos de la cuenta, el tenant y la versión del endpoint.
+2. En **Integración**, pulsa **Sincronizar ahora** para obtener casos y tareas desde Acumatica.
+3. Comprueba que Resumen, Casos, Tareas y Productividad tengan información.
+4. Si aparecen ceros, verifica los permisos de `Case`, `Task` y `Employee`, el tenant, los propietarios y la versión del endpoint.
 
 ## Pruebas
 
@@ -199,7 +183,7 @@ La suite actual contiene 9 pruebas Angular. La sincronización real requiere una
 2. Los filtros deben actualizar KPIs y detalle simultáneamente.
 3. Los KPIs interactivos deben mostrar los registros que los componen.
 4. Deben funcionar búsqueda, estado y actividad de Casos.
-5. Tareas debe importar el Excel más reciente y mostrar las vencidas.
+5. Tareas debe sincronizar Acumatica y mostrar las vencidas.
 6. Productividad debe responder a todos los periodos y al rango manual.
 7. El CSV debe abrir en Excel y el reporte debe poder guardarse como PDF.
 8. Al cerrar sesión, la información personal debe desaparecer.

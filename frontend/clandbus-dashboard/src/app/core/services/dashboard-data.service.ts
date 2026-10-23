@@ -141,37 +141,6 @@ export class DashboardDataService {
     });
   }
 
-  importTasks(file: File) {
-    this.loading$.next(true);
-    this.error$.next('');
-    this.status$.next('Importando Tasks desde Excel…');
-    const owner = this.selectedOwner$.value;
-    return this.api.importTasks(file).pipe(
-      switchMap((result) => this.readDashboard(owner, result))
-    );
-  }
-
-  importLatestTasks() {
-    this.loading$.next(true);
-    this.error$.next('');
-    this.status$.next('Leyendo el Excel más reciente…');
-    const owner = this.selectedOwner$.value;
-    return this.api.importLatestTasks().pipe(
-      switchMap((result) => this.readDashboard(owner, result))
-    );
-  }
-
-  applyTaskImport(data: any) {
-    this.dashboardCache.clear();
-    this.dashboardCache.set(this.ownerCacheKey(this.selectedOwner$.value), data);
-    this.applyDashboardView(data);
-    this.loading$.next(false);
-    const imported = data.result?.imported ?? data.tasks?.length ?? 0;
-    this.status$.next(`${imported} Tasks importadas desde Excel`);
-    this.notify(`${imported} Tasks actualizadas correctamente.`, 'success');
-    if (this.canViewTeam$.value) this.refreshOwners();
-  }
-
   selectOwner(owner: string) {
     if (!this.canViewTeam$.value && owner) return;
     if (owner === this.selectedOwner$.value) return;
