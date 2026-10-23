@@ -4,6 +4,7 @@ using ClandbusERPIntegration.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using System.Text.Json;
 
 namespace ClandbusERPIntegration.Controllers;
 
@@ -30,6 +31,22 @@ public sealed class TeamDashboardController(
         var current = sessions.GetCurrent(HttpContext);
         if (current is null) return Unauthorized();
         if (!CanViewTeam(current.CurrentUsername, current.CurrentDisplayName)) return Forbid();
+
+        try
+        {
+            var employees = await current.GetEmployeesAsync();
+            var employeeNames = employees
+                .Select(row => Value(row, "EmployeeName", "DisplayName"))
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(name => name)
+                .ToArray();
+            if (employeeNames.Length > 0) return Ok(employeeNames);
+        }
+        catch (HttpRequestException)
+        {
+            // Preserve the configured/database directory if Employee is unavailable.
+        }
 
         if (_settings.Members.Length > 0)
         {
@@ -67,4 +84,18 @@ public sealed class TeamDashboardController(
         _settings.ExecutiveUsers.Any(allowed =>
             allowed.Equals(username, StringComparison.OrdinalIgnoreCase)
             || allowed.Equals(displayName, StringComparison.OrdinalIgnoreCase));
+
+    private static string Value(JsonElement row, params string[] names)
+    {
+        foreach (var name in names)
+        {
+            if (!row.TryGetProperty(name, out var property)) continue;
+            while (property.ValueKind == JsonValueKind.Object && property.TryGetProperty("value", out var wrapped))
+                property = wrapped;
+            if (property.ValueKind == JsonValueKind.Object && property.TryGetProperty("description", out var description))
+                property = description;
+            return property.ValueKind == JsonValueKind.String ? property.GetString() ?? string.Empty : property.ToString();
+        }
+        return string.Empty;
+    }
 }

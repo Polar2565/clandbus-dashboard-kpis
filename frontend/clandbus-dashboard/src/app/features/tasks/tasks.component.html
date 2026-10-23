@@ -5,9 +5,8 @@
     <p>Migraciones, desarrollo, soporte y actividades ligadas a cada caso.</p>
   </div>
   <div class="import-area">
-    <button type="button" (click)="importLatest()" [disabled]="importing">
-      {{ importing ? 'Actualizando…' : 'Actualizar tareas' }}</button
-    ><small>Lee automáticamente el Excel más reciente.</small>
+    <button type="button" (click)="data.sync()">Sincronizar tareas</button
+    ><small>Consulta directamente el endpoint de Acumatica.</small>
   </div>
 </section>
 <section class="task-controls">

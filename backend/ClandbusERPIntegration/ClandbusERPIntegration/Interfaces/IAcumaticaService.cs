@@ -14,6 +14,8 @@ public interface IAcumaticaService : IDisposable
     Task<IReadOnlyList<JsonElement>> GetCasesAsync();
     Task<IReadOnlyList<JsonElement>> GetAllCasesAsync();
     Task<IReadOnlyList<JsonElement>> GetTasksAsync();
+    Task<IReadOnlyList<JsonElement>> GetAllTasksAsync();
+    Task<IReadOnlyList<JsonElement>> GetEmployeesAsync();
     Task<List<SalesOrderDto>> GetLastSalesOrdersAsync();
     Task<bool> UpdateOrderAsync(UpdateOrderDto request);
     Task<bool> RemoveHoldAsync(RemoveHoldDto request);

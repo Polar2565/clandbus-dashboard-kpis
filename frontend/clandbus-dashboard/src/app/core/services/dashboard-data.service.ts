@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, catchError, map, of, Subscription, switchMap } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { BehaviorSubject, map, Subscription, switchMap } from 'rxjs';
 import { AcumaticaService } from './acumatica.service';
 
 export interface DashboardSummary {
@@ -28,11 +29,16 @@ export class DashboardDataService {
   readonly notification$ = new BehaviorSubject<AppNotification | null>(null);
   private timer?: ReturnType<typeof setInterval>;
   private notificationTimer?: ReturnType<typeof setTimeout>;
+  private inactivityTimer?: ReturnType<typeof setTimeout>;
+  private readonly inactivityMs = 30 * 60 * 1000;
   private loadRequestId = 0;
   private loadSubscription?: Subscription;
   private readonly dashboardCache = new Map<string, { summary: DashboardSummary; cases: any[]; tasks: any[] }>();
 
   constructor(private api: AcumaticaService) {
+    ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach(event =>
+      window.addEventListener(event, () => this.registerActivity(), { passive: true })
+    );
     this.api.getCurrentUser().subscribe({
       next: (profile) => profile?.isAuthenticated ? this.sessionStarted(profile, false) : this.clearPrivateData(),
       error: () => this.clearPrivateData()
@@ -46,6 +52,7 @@ export class DashboardDataService {
   }
 
   private clearPrivateData() {
+    if (this.inactivityTimer) clearTimeout(this.inactivityTimer);
     this.summary$.next(EMPTY); this.cases$.next([]); this.tasks$.next([]);
     this.connected$.next(false); this.profile$.next(null);
     this.canViewTeam$.next(false);
@@ -74,8 +81,13 @@ export class DashboardDataService {
         this.loading$.next(false);
         this.status$.next(data.summary?.lastSyncAt ? `Última captura ${new Date(data.summary.lastSyncAt).toLocaleString('es-MX')}` : 'Esperando primera sincronización');
       },
-      error: () => {
+      error: (error: HttpErrorResponse) => {
         if (requestId === this.loadRequestId) {
+          if (error.status === 401) {
+            this.clearPrivateData();
+            this.notify('La sesión terminó. Inicia sesión nuevamente.', 'info');
+            return;
+          }
           this.loading$.next(false);
           this.status$.next('No fue posible leer la base local');
         }
@@ -86,6 +98,7 @@ export class DashboardDataService {
   sessionStarted(profile?: UserProfile, announce = true) {
     if (profile) this.profile$.next(profile);
     this.connected$.next(true); this.loadLocal();
+    this.registerActivity();
     this.api.getTeamAccess().subscribe({
       next: access => {
         this.canViewTeam$.next(access.canViewTeam);
@@ -105,9 +118,6 @@ export class DashboardDataService {
     this.error$.next(''); this.status$.next('Sincronizando con Acumatica…');
     const owner = this.selectedOwner$.value;
     this.api.synchronize().pipe(
-      switchMap(() => this.canViewTeam$.value
-        ? this.api.importLatestTasks().pipe(catchError(() => of(null)))
-        : of(null)),
       switchMap(() => this.readDashboard(owner))
     ).subscribe({
       next: (data: any) => {
@@ -117,7 +127,12 @@ export class DashboardDataService {
         this.loading$.next(false); this.status$.next(`Actualizado ${new Date().toLocaleString('es-MX')}`);
         if (this.canViewTeam$.value) this.refreshOwners();
       },
-      error: () => {
+      error: (error: HttpErrorResponse) => {
+        if (error.status === 401) {
+          this.clearPrivateData();
+          this.notify('La sesión terminó. Inicia sesión nuevamente.', 'info');
+          return;
+        }
         this.loading$.next(false); this.status$.next('Sesión activa; sincronización pendiente');
         this.error$.next('La sesión inició correctamente, pero Acumatica rechazó la consulta de datos.');
         this.loadLocal();
@@ -224,5 +239,15 @@ export class DashboardDataService {
     this.api.logout().subscribe();
     this.clearPrivateData();
     this.notify('Sesión cerrada correctamente.', 'info');
+  }
+
+  private registerActivity() {
+    if (!this.connected$.value) return;
+    if (this.inactivityTimer) clearTimeout(this.inactivityTimer);
+    this.inactivityTimer = setTimeout(() => {
+      this.api.logout().subscribe({ error: () => undefined });
+      this.clearPrivateData();
+      this.notify('La sesión se cerró por 30 minutos de inactividad.', 'info');
+    }, this.inactivityMs);
   }
 }

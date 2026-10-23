@@ -345,35 +345,81 @@ namespace ClandbusERPIntegration.Services
 
         public async Task<IReadOnlyList<JsonElement>> GetTasksAsync()
         {
-            // EP4040PL is backed by CRActivity records whose class is Task.
-            // Depending on the published endpoint, those records can be exposed
-            // through Task or through the broader Activity entity.
-            var collected = new List<JsonElement>();
-            foreach (var entity in new[] { "Task", "Activity" })
+            if (_settings.PreferDefaultTaskEndpoint)
+                return await GetDefaultTasksAsync(includeAllOwners: false);
+
+            throw new HttpRequestException("El endpoint Default de tareas está desactivado; se conserva la captura importada.");
+        }
+
+        public async Task<IReadOnlyList<JsonElement>> GetAllTasksAsync()
+        {
+            if (_settings.PreferDefaultTaskEndpoint)
+                return await GetDefaultTasksAsync(includeAllOwners: true);
+
+            throw new HttpRequestException("El endpoint Default de tareas está desactivado; se conserva la captura importada.");
+        }
+
+        public async Task<IReadOnlyList<JsonElement>> GetEmployeesAsync()
+        {
+            if (!_settings.PreferEmployeeDirectory) return Array.Empty<JsonElement>();
+            return await GetEmployeeDirectoryAsync();
+        }
+
+        private async Task<IReadOnlyList<JsonElement>> GetEmployeeDirectoryAsync()
+        {
+            const string fields = "EmployeeID,EmployeeName,DisplayName,DepartmentID,Status,CreatedDateTime,LastModifiedDateTime";
+            var rows = await GetAllRowsAsync(
+                $"entity/Default/{_settings.EndpointVersion}/Employee?$select={fields}",
+                useBasicAuthentication: false,
+                pageSize: 500);
+            return rows.Where(row =>
             {
-                var filters = OwnerFilterValues()
-                    .Select(owner => $"Owner eq '{owner.Replace("'", "''")}'")
-                    .Append("WorkgroupIsMine eq true");
-                foreach (var expression in filters)
+                var status = Value(row, "Status");
+                return string.IsNullOrWhiteSpace(status)
+                    || status.Equals("Active", StringComparison.OrdinalIgnoreCase)
+                    || status.Equals("Activo", StringComparison.OrdinalIgnoreCase)
+                    || status.Equals("A", StringComparison.OrdinalIgnoreCase);
+            }).ToArray();
+        }
+
+        private async Task<IReadOnlyList<JsonElement>> GetDefaultTasksAsync(bool includeAllOwners)
+        {
+            const string fields = "NoteID,Summary,Status,CompletionPercentage,Category,Owner,OwnerID_description,RelatedEntityDescription,RelatedEntityNoteID,StartDate,DueDate,CompletedAt,Priority,CreatedDateTime,LastModifiedDateTime";
+            var endpoint = $"entity/Default/{_settings.EndpointVersion}/Task?$select={fields}";
+            if (includeAllOwners)
+            {
+                var all = await GetAllRowsAsync(endpoint, useBasicAuthentication: false, pageSize: 500);
+                return await AddOwnerDisplayNamesAsync(all);
+            }
+
+            var collected = new List<JsonElement>();
+            foreach (var owner in OwnerFilterValues())
+            {
+                foreach (var property in new[] { "Owner", "OwnerID_description" })
                 {
                     try
                     {
+                        var expression = $"{property} eq '{owner.Replace("'", "''")}'";
                         var filter = Uri.EscapeDataString(expression);
-                        var rows = await GetRowsAsync(
-                            $"entity/Default/{_settings.EndpointVersion}/{entity}?$filter={filter}&$top=1000");
-                        var owned = rows.Where(row =>
-                            IsCurrentOwner(row) || Boolean(row, "WorkgroupIsMine"));
-                        if (entity == "Activity") owned = owned.Where(IsTaskActivity);
-                        collected.AddRange(owned);
+                        collected.AddRange(await GetAllRowsAsync(
+                            $"{endpoint}&$filter={filter}",
+                            useBasicAuthentication: false,
+                            pageSize: 500));
                     }
                     catch (HttpRequestException)
                     {
-                        // Try the next identifier/entity exposed by this tenant.
+                        // Owner fields differ between endpoint publications.
                     }
                 }
             }
 
-            return collected
+            if (collected.Count == 0)
+            {
+                var all = await GetAllRowsAsync(endpoint, useBasicAuthentication: false, pageSize: 500);
+                collected.AddRange(all.Where(IsCurrentOwner));
+            }
+
+            var rows = collected
                 .GroupBy(row =>
                 {
                     var key = Value(row, "NoteID", "TaskID", "id", "ID");
@@ -381,6 +427,34 @@ namespace ClandbusERPIntegration.Services
                 })
                 .Select(group => group.First())
                 .ToArray();
+            return await AddOwnerDisplayNamesAsync(rows);
+        }
+
+        private async Task<IReadOnlyList<JsonElement>> AddOwnerDisplayNamesAsync(IEnumerable<JsonElement> rows)
+        {
+            var directory = (await GetEmployeeDirectoryAsync())
+                .Select(employee => new
+                {
+                    Id = NormalizeIdentifier(Value(employee, "EmployeeID")),
+                    Name = Value(employee, "EmployeeName", "DisplayName")
+                })
+                .Where(employee => !string.IsNullOrWhiteSpace(employee.Id) && !string.IsNullOrWhiteSpace(employee.Name))
+                .GroupBy(employee => employee.Id, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.First().Name, StringComparer.OrdinalIgnoreCase);
+            foreach (var mapping in _settings.OwnerMappings)
+                directory[NormalizeIdentifier(mapping.Key)] = mapping.Value;
+            return rows.Select(row =>
+            {
+                var objectNode = JsonNode.Parse(row.GetRawText())?.AsObject();
+                if (objectNode is null) return row;
+                var ownerId = NormalizeIdentifier(Value(row, "OwnerID_description", "Owner"));
+                var ownerName = Value(row, "OwnerID_description");
+                if ((string.IsNullOrWhiteSpace(ownerName) || ownerName.Equals(ownerId, StringComparison.OrdinalIgnoreCase))
+                    && directory.TryGetValue(ownerId, out var employeeName)) ownerName = employeeName;
+                if (string.IsNullOrWhiteSpace(ownerName)) ownerName = ownerId;
+                if (!string.IsNullOrWhiteSpace(ownerName)) objectNode["OwnerDisplayName"] = ownerName;
+                return JsonSerializer.Deserialize<JsonElement>(objectNode.ToJsonString());
+            }).ToArray();
         }
 
         private async Task<IReadOnlyList<JsonElement>> GetEntityRowsAsync(string entity)
@@ -457,7 +531,7 @@ namespace ClandbusERPIntegration.Services
                     return description.GetString() ?? description.ToString();
                 if (property.TryGetProperty("id", out var id))
                     return id.GetString() ?? id.ToString();
-                break;
+                return string.Empty;
             }
             return property.ValueKind == JsonValueKind.String
                 ? property.GetString() ?? string.Empty

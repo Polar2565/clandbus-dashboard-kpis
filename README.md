@@ -113,6 +113,8 @@ Edita el nuevo `appsettings.Development.json` y reemplaza solamente los valores 
 | `Acumatica:BaseUrl` | URL base privada de tu instancia, terminada en `/` |
 | `Acumatica:EndpointVersion` | Versión del endpoint publicado en tu ERP |
 | `Acumatica:PreferDefaultCaseEndpoint` | `true` consulta `Default/{EndpointVersion}/Case`; si el endpoint no responde, conserva el Generic Inquiry como respaldo |
+| `Acumatica:PreferDefaultTaskEndpoint` | `true` obtiene las tareas desde `Default/{EndpointVersion}/Task`; el Excel queda como respaldo manual |
+| `Acumatica:PreferEmployeeDirectory` | `true` obtiene el directorio activo desde `Default/{EndpointVersion}/Employee` |
 | `Acumatica:Company` | Tenant o compañía exacta de Acumatica |
 | `Acumatica:Branch` | Sucursal, o una cadena vacía si no aplica |
 | `OwnerId` / `OwnerName` | Déjalos vacíos; solo son respaldo si tu endpoint no identifica al usuario |
@@ -120,6 +122,8 @@ Edita el nuevo `appsettings.Development.json` y reemplaza solamente los valores 
 | `TeamDashboard:ExecutiveUsers` | Usuarios o nombres de Acumatica autorizados para consultar el consolidado |
 
 `appsettings.Development.json` está ignorado por Git. Nunca pongas usuario, contraseña, cookie, URL privada o datos del cliente en el archivo de ejemplo versionado.
+
+La sesión se valida siempre contra el backend y se cierra después de 30 minutos sin actividad. Las credenciales y cookies de Acumatica no se persisten; reiniciar la API requiere iniciar sesión nuevamente.
 
 El selector global utiliza el propietario incluido en los casos de Acumatica y en cada fila del Excel de tareas. Al sincronizar desde una cuenta ejecutiva, la API conserva los registros de todos los propietarios disponibles. Solo las cuentas incluidas en `TeamDashboard:ExecutiveUsers` pueden solicitar el filtro de otra persona; ocultar el selector en Angular no sustituye esta validación del backend.
 

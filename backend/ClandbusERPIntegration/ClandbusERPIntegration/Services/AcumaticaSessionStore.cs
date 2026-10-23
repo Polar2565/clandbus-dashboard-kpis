@@ -10,7 +10,8 @@ namespace ClandbusERPIntegration.Services;
 public sealed class AcumaticaSessionStore(IOptions<AcumaticaSettings> settings) : IAcumaticaSessionStore
 {
     public const string CookieName = "clandbus_session";
-    private readonly ConcurrentDictionary<string, IAcumaticaService> _sessions = new();
+    private static readonly TimeSpan InactivityTimeout = TimeSpan.FromMinutes(30);
+    private readonly ConcurrentDictionary<string, SessionEntry> _sessions = new();
 
     public async Task<IAcumaticaService?> LoginAsync(HttpContext context, LoginRequestDto request)
     {
@@ -24,7 +25,7 @@ public sealed class AcumaticaSessionStore(IOptions<AcumaticaSettings> settings) 
         }
 
         var key = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
-        _sessions[key] = service;
+        _sessions[key] = new SessionEntry(service, DateTimeOffset.UtcNow);
         context.Response.Cookies.Append(CookieName, key, new CookieOptions
         {
             HttpOnly = true,
@@ -39,20 +40,33 @@ public sealed class AcumaticaSessionStore(IOptions<AcumaticaSettings> settings) 
     public IAcumaticaService? GetCurrent(HttpContext context)
     {
         if (!context.Request.Cookies.TryGetValue(CookieName, out var key)) return null;
-        return _sessions.TryGetValue(key, out var service) && service.IsLoggedIn ? service : null;
+        if (!_sessions.TryGetValue(key, out var entry)) return null;
+        if (DateTimeOffset.UtcNow - entry.LastActivity >= InactivityTimeout || !entry.Service.IsLoggedIn)
+        {
+            if (_sessions.TryRemove(key, out var expired)) expired.Service.Dispose();
+            return null;
+        }
+        entry.LastActivity = DateTimeOffset.UtcNow;
+        return entry.Service;
     }
 
     public async Task LogoutAsync(HttpContext context)
     {
         if (context.Request.Cookies.TryGetValue(CookieName, out var key)
-            && _sessions.TryRemove(key, out var service))
+            && _sessions.TryRemove(key, out var entry))
         {
-            try { await service.LogoutAsync(); }
-            finally { if (service is IDisposable disposable) disposable.Dispose(); }
+            try { await entry.Service.LogoutAsync(); }
+            finally { entry.Service.Dispose(); }
         }
         context.Response.Cookies.Delete(CookieName, new CookieOptions
         {
             HttpOnly = true, Secure = true, SameSite = SameSiteMode.None, IsEssential = true
         });
+    }
+
+    private sealed class SessionEntry(IAcumaticaService service, DateTimeOffset lastActivity)
+    {
+        public IAcumaticaService Service { get; } = service;
+        public DateTimeOffset LastActivity { get; set; } = lastActivity;
     }
 }

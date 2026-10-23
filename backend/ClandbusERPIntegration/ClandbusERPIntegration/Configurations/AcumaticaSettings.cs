@@ -9,6 +9,8 @@
         public string OwnerId { get; set; } = string.Empty;
         public string OwnerName { get; set; } = string.Empty;
         public bool PreferDefaultCaseEndpoint { get; set; }
+        public bool PreferDefaultTaskEndpoint { get; set; }
+        public bool PreferEmployeeDirectory { get; set; }
         public Dictionary<string, string> OwnerMappings { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     }
 }

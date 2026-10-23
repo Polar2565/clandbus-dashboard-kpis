@@ -30,19 +30,46 @@ public sealed class SynchronizationService(
                 ? []
                 : await db.Tasks.AsNoTracking().Where(x => x.UserKey == userKey && x.CapturedAt == previousRun.StartedAt)
                     .ToListAsync(cancellationToken);
-            var cases = (includeTeamCases
-                    ? await acumatica.GetAllCasesAsync()
-                    : await acumatica.GetCasesAsync())
-                .Select(x => MapCase(x, capturedAt)).ToArray();
+            var caseRequest = includeTeamCases
+                ? acumatica.GetAllCasesAsync()
+                : acumatica.GetCasesAsync();
+            var taskRequest = includeTeamCases
+                ? acumatica.GetAllTasksAsync()
+                : acumatica.GetTasksAsync();
+            var caseRows = await caseRequest;
+            var cases = caseRows.Select(x => MapCase(x, capturedAt)).ToArray();
+            var ownerNames = caseRows
+                .Select(row => new
+                {
+                    Id = Value(row, "Owner", "CRCase_ownerID"),
+                    Name = Value(row, "OwnerDisplayName", "OwnerEmployeeName", "CRCase_ownerID_description")
+                })
+                .Where(owner => !string.IsNullOrWhiteSpace(owner.Id)
+                    && !string.IsNullOrWhiteSpace(owner.Name)
+                    && !owner.Id.Equals(owner.Name, StringComparison.OrdinalIgnoreCase))
+                .GroupBy(owner => owner.Id, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.First().Name, StringComparer.OrdinalIgnoreCase);
             foreach (var item in cases) item.UserKey = userKey;
-            var tasks = previousTasks.Select(x => new TaskSnapshot
+            TaskSnapshot[] tasks;
+            try
             {
-                UserKey = userKey,
-                ExternalId = x.ExternalId, Summary = x.Summary, Status = x.Status,
-                CompletionPercent = x.CompletionPercent, Category = x.Category,
-                Owner = x.Owner, RelatedCase = x.RelatedCase, StartAt = x.StartAt,
-                DueAt = x.DueAt, CompletedAt = x.CompletedAt, CapturedAt = capturedAt
-            }).ToArray();
+                var liveTasks = await taskRequest;
+                tasks = liveTasks.Select(x => MapTask(x, capturedAt)).ToArray();
+                foreach (var task in tasks)
+                    if (ownerNames.TryGetValue(task.Owner, out var ownerName)) task.Owner = ownerName;
+            }
+            catch (HttpRequestException)
+            {
+                tasks = previousTasks.Select(x => new TaskSnapshot
+                {
+                    UserKey = userKey,
+                    ExternalId = x.ExternalId, Summary = x.Summary, Status = x.Status,
+                    CompletionPercent = x.CompletionPercent, Category = x.Category,
+                    Owner = x.Owner, RelatedCase = x.RelatedCase, StartAt = x.StartAt,
+                    DueAt = x.DueAt, CompletedAt = x.CompletedAt, CapturedAt = capturedAt
+                }).ToArray();
+            }
+            foreach (var item in tasks) item.UserKey = userKey;
 
             db.Cases.AddRange(cases);
             db.Tasks.AddRange(tasks);
@@ -84,11 +111,11 @@ public sealed class SynchronizationService(
         Status = Value(row, "Status"),
         CompletionPercent = Number(row, "CompletionPercentage", "CompletionPercent", "PercentCompletion", "PercentCompleted"),
         Category = Value(row, "Category"),
-        Owner = Value(row, "Owner"),
+        Owner = Value(row, "OwnerDisplayName", "OwnerID_description", "Owner"),
         RelatedCase = Value(row, "RelatedEntityDescription", "RelatedEntityNoteID", "RelatedEntity", "Entity", "RefNoteID"),
         StartAt = Date(row, "StartDate"),
         DueAt = Date(row, "DueDate"),
-        CompletedAt = Date(row, "CompletedOn", "CompletedDate", "EndDate"),
+        CompletedAt = Date(row, "CompletedAt", "CompletedOn", "CompletedDate", "EndDate"),
         CapturedAt = capturedAt
     };
 
@@ -118,7 +145,7 @@ public sealed class SynchronizationService(
                     return description.GetString() ?? description.ToString();
                 if (property.TryGetProperty("id", out var id))
                     return id.GetString() ?? id.ToString();
-                break;
+                return string.Empty;
             }
             return property.ValueKind == JsonValueKind.String
                 ? property.GetString() ?? string.Empty : property.ToString();

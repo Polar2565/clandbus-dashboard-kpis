@@ -71,7 +71,8 @@ Angular utiliza normalmente `/api/Dashboard/view` para reducir viajes HTTP al ca
 
 - Los casos se guardan como una captura SQL. De forma predeterminada se consultan mediante el Generic Inquiry `CR-Cases2018R1`.
 - Para validar el contrato moderno, configura `Acumatica:PreferDefaultCaseEndpoint` en `true`. La API consultará `Default/{EndpointVersion}/Case` y volverá automáticamente al Generic Inquiry si Acumatica rechaza esa ruta.
-- Las tareas se importan desde el `.xlsx` más reciente de `App_Data/TaskImports`; los archivos reales están ignorados por Git.
+- Con `Acumatica:PreferDefaultTaskEndpoint` en `true`, las tareas se consultan directamente desde `Default/{EndpointVersion}/Task`. El `.xlsx` de `App_Data/TaskImports` se conserva únicamente como respaldo manual.
+- Con `Acumatica:PreferEmployeeDirectory` en `true`, el selector utiliza empleados activos publicados por `Default/{EndpointVersion}/Employee`; `TeamDashboard:Members` y los propietarios detectados siguen disponibles como respaldo.
 - Una sincronización conserva la captura anterior si Acumatica rechaza la consulta, evitando presentar datos de otro usuario como respaldo.
 - Las cuentas incluidas en `TeamDashboard:ExecutiveUsers` pueden sincronizar el conjunto del equipo y después filtrar por nombres canónicos.
 - `OwnerMappings` relaciona identificadores de Acumatica con los nombres visibles del selector.
