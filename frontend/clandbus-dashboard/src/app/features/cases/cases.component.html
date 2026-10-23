@@ -67,15 +67,22 @@
     <section class="panel table-panel">
       <div class="toolbar">
         <div class="search">
-          <span>⌕</span><input [(ngModel)]="search" placeholder="Buscar caso, asunto o cliente" />
+          <span>⌕</span><input [(ngModel)]="search" (ngModelChange)="resetPage()" placeholder="Buscar caso, asunto o cliente" />
         </div>
-        <select [(ngModel)]="status">
+        <select [(ngModel)]="status" (ngModelChange)="resetPage()" aria-label="Filtrar por estado">
           <option>Todos</option>
           <option value="N">Nuevo</option>
           <option value="O">Abierto</option>
           <option value="P">Esperando cliente</option>
           <option value="C">Cerrado</option></select
-        ><span class="result-count">{{ filtered(cases).length }} resultados</span>
+        ><label class="page-size">Mostrar
+          <select [(ngModel)]="pageSize" (ngModelChange)="resetPage()" aria-label="Casos por página">
+            <option [ngValue]="5">5</option>
+            <option [ngValue]="10">10</option>
+            <option [ngValue]="25">25</option>
+            <option ngValue="all">Todos</option>
+          </select>
+        </label><span class="result-count">{{ filtered(cases).length }} resultados</span>
       </div>
       <div class="table-scroll">
         <table>
@@ -90,7 +97,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of filtered(cases)" (click)="selected = item">
+            <tr *ngFor="let item of paged(cases)" (click)="selected = item">
               <td>
                 <b class="case-id">{{ item.caseNumber }}</b>
               </td>
@@ -119,6 +126,16 @@
           </tbody>
         </table>
       </div>
+      <ng-container *ngIf="filtered(cases) as rows">
+        <footer class="pagination" *ngIf="rows.length">
+          <span>Mostrando {{ pageStart(rows.length) }}–{{ pageEnd(rows.length) }} de {{ rows.length }}</span>
+          <div>
+            <button (click)="previousPage()" [disabled]="page === 1">Anterior</button>
+            <strong>Página {{ page }} de {{ pageCount(rows.length) }}</strong>
+            <button (click)="nextPage(rows.length)" [disabled]="page >= pageCount(rows.length)">Siguiente</button>
+          </div>
+        </footer>
+      </ng-container>
     </section>
   </ng-container>
 </ng-container>

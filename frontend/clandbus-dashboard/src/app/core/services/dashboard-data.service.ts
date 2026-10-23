@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, catchError, forkJoin, of, Subscription, switchMap } from 'rxjs';
+import { BehaviorSubject, catchError, map, of, Subscription, switchMap } from 'rxjs';
 import { AcumaticaService } from './acumatica.service';
 
 export interface DashboardSummary {
@@ -30,6 +30,7 @@ export class DashboardDataService {
   private notificationTimer?: ReturnType<typeof setTimeout>;
   private loadRequestId = 0;
   private loadSubscription?: Subscription;
+  private readonly dashboardCache = new Map<string, { summary: DashboardSummary; cases: any[]; tasks: any[] }>();
 
   constructor(private api: AcumaticaService) {
     this.api.getCurrentUser().subscribe({
@@ -52,16 +53,24 @@ export class DashboardDataService {
     this.status$.next('Inicia sesión para consultar tus métricas');
   }
 
-  loadLocal() {
+  loadLocal(force = false) {
     const owner = this.selectedOwner$.value;
+    const cacheKey = this.ownerCacheKey(owner);
     const requestId = ++this.loadRequestId;
     this.loadSubscription?.unsubscribe();
-    this.clearDashboardView();
-    this.loading$.next(true);
+    const cached = force ? undefined : this.dashboardCache.get(cacheKey);
+    if (cached) {
+      this.applyDashboardView(cached);
+      this.loading$.next(false);
+    } else {
+      this.clearDashboardView();
+      this.loading$.next(true);
+    }
     this.loadSubscription = this.readDashboard(owner).subscribe({
       next: (data: any) => {
         if (requestId !== this.loadRequestId) return;
-        this.summary$.next({ ...EMPTY, ...data.summary }); this.cases$.next(data.cases || []); this.tasks$.next(data.tasks || []);
+        this.dashboardCache.set(cacheKey, data);
+        this.applyDashboardView(data);
         this.loading$.next(false);
         this.status$.next(data.summary?.lastSyncAt ? `Última captura ${new Date(data.summary.lastSyncAt).toLocaleString('es-MX')}` : 'Esperando primera sincronización');
       },
@@ -87,7 +96,7 @@ export class DashboardDataService {
       error: () => this.canViewTeam$.next(false)
     });
     if (this.timer) clearInterval(this.timer);
-    this.timer = setInterval(() => this.loadLocal(), 60 * 60 * 1000);
+    this.timer = setInterval(() => this.loadLocal(true), 60 * 60 * 1000);
     if (announce) this.notify('Sesión iniciada. Tus métricas están disponibles.', 'success');
   }
 
@@ -102,7 +111,9 @@ export class DashboardDataService {
       switchMap(() => this.readDashboard(owner))
     ).subscribe({
       next: (data: any) => {
-        this.summary$.next({ ...EMPTY, ...data.summary }); this.cases$.next(data.cases || []); this.tasks$.next(data.tasks || []);
+        this.dashboardCache.clear();
+        this.dashboardCache.set(this.ownerCacheKey(owner), data);
+        this.applyDashboardView(data);
         this.loading$.next(false); this.status$.next(`Actualizado ${new Date().toLocaleString('es-MX')}`);
         if (this.canViewTeam$.value) this.refreshOwners();
       },
@@ -136,9 +147,9 @@ export class DashboardDataService {
   }
 
   applyTaskImport(data: any) {
-    this.summary$.next({ ...EMPTY, ...data.summary });
-    this.cases$.next(data.cases || []);
-    this.tasks$.next(data.tasks || []);
+    this.dashboardCache.clear();
+    this.dashboardCache.set(this.ownerCacheKey(this.selectedOwner$.value), data);
+    this.applyDashboardView(data);
     this.loading$.next(false);
     const imported = data.result?.imported ?? data.tasks?.length ?? 0;
     this.status$.next(`${imported} Tasks importadas desde Excel`);
@@ -185,12 +196,19 @@ export class DashboardDataService {
   }
 
   private readDashboard(owner: string, result?: any) {
-    return forkJoin({
-      ...(result === undefined ? {} : { result: of(result) }),
-      summary: this.api.getSummary(owner).pipe(catchError(() => of({ ...EMPTY }))),
-      cases: this.api.getCases(owner).pipe(catchError(() => of([]))),
-      tasks: this.api.getTasks(owner).pipe(catchError(() => of([])))
-    });
+    return this.api.getDashboardView(owner).pipe(
+      map(view => result === undefined ? view : { ...view, result })
+    );
+  }
+
+  private applyDashboardView(data: any) {
+    this.summary$.next({ ...EMPTY, ...data.summary });
+    this.cases$.next(data.cases || []);
+    this.tasks$.next(data.tasks || []);
+  }
+
+  private ownerCacheKey(owner: string) {
+    return owner.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLocaleLowerCase('es-MX');
   }
 
   private clearDashboardView() {
@@ -202,6 +220,7 @@ export class DashboardDataService {
   disconnect() {
     if (this.timer) clearInterval(this.timer);
     this.loadSubscription?.unsubscribe();
+    this.dashboardCache.clear();
     this.api.logout().subscribe();
     this.clearPrivateData();
     this.notify('Sesión cerrada correctamente.', 'info');

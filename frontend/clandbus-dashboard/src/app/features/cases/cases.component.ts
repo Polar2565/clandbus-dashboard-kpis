@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { DashboardDataService } from '../../core/services/dashboard-data.service';
 
 @Component({
@@ -10,21 +11,31 @@ import { DashboardDataService } from '../../core/services/dashboard-data.service
   templateUrl: './cases.component.html',
   styleUrl: './cases.component.scss',
 })
-export class CasesComponent {
+export class CasesComponent implements OnInit, OnDestroy {
   readonly data = inject(DashboardDataService);
   search = '';
   status = 'Todos';
+  page = 1;
+  pageSize: number | 'all' = 5;
   period: 'day' | 'week' | 'month' | 'year' | 'history' = 'history';
   readonly cases$ = this.data.cases$;
   selected: any = null;
+  private ownerSubscription?: Subscription;
   readonly statusColors: Record<string, string> = {
     N: '#6d7f91',
     O: '#087eaa',
     P: '#bd8127',
     C: '#2b946f',
   };
+  ngOnInit() {
+    this.ownerSubscription = this.data.selectedOwner$.subscribe(() => this.resetPage());
+  }
+  ngOnDestroy() {
+    this.ownerSubscription?.unsubscribe();
+  }
   selectPeriod(period: 'day' | 'week' | 'month' | 'year' | 'history') {
     this.period = period;
+    this.resetPage();
   }
   periodLabel() {
     return (
@@ -103,6 +114,32 @@ export class CasesComponent {
         this.matchesStatus(x.status) &&
         (!q || `${x.caseNumber} ${x.subject} ${x.customer}`.toLowerCase().includes(q)),
     );
+  }
+  paged(items: any[]) {
+    const rows = this.filtered(items);
+    if (this.pageSize === 'all') return rows;
+    const start = (this.page - 1) * this.pageSize;
+    return rows.slice(start, start + this.pageSize);
+  }
+  pageCount(total: number) {
+    return this.pageSize === 'all' ? 1 : Math.max(1, Math.ceil(total / this.pageSize));
+  }
+  pageStart(total: number) {
+    if (!total) return 0;
+    return this.pageSize === 'all' ? 1 : (this.page - 1) * this.pageSize + 1;
+  }
+  pageEnd(total: number) {
+    if (this.pageSize === 'all') return total;
+    return Math.min(this.page * this.pageSize, total);
+  }
+  previousPage() {
+    this.page = Math.max(1, this.page - 1);
+  }
+  nextPage(total: number) {
+    this.page = Math.min(this.pageCount(total), this.page + 1);
+  }
+  resetPage() {
+    this.page = 1;
   }
   private matchesStatus(value: string) {
     if (this.status === 'Todos') return true;

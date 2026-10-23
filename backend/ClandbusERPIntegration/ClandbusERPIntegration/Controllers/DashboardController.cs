@@ -230,18 +230,18 @@ public sealed class DashboardController(
                 tasks = Array.Empty<TaskSnapshot>()
             });
 
-        // LocalDB atiende mejor estas lecturas de forma secuencial. Además, esta
-        // ruta evita que el cliente consulte tres veces la misma captura.
-        var allCases = await db.Cases.AsNoTracking()
-            .Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt)
+        // LocalDB atiende mejor estas lecturas de forma secuencial. El filtro se
+        // ejecuta en SQL para no cargar en memoria la información de todo el equipo.
+        var cases = await FilterCasesQuery(
+                db.Cases.AsNoTracking()
+                    .Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt), owner)
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(cancellationToken);
-        var allTasks = await db.Tasks.AsNoTracking()
-            .Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt)
+        var tasks = await FilterTasksQuery(
+                db.Tasks.AsNoTracking()
+                    .Where(x => x.UserKey == userKey && x.CapturedAt == run.StartedAt), owner)
             .OrderBy(x => x.DueAt)
             .ToListAsync(cancellationToken);
-        var cases = FilterByOwner(allCases, owner, x => x.Owner);
-        var tasks = FilterByOwner(allTasks, owner, x => x.Owner);
 
         var completed = tasks.Count(x => x.CompletionPercent >= 100
             || x.Status.Contains("Completed", StringComparison.OrdinalIgnoreCase)
@@ -369,19 +369,6 @@ public sealed class DashboardController(
         if (string.IsNullOrWhiteSpace(owner)) return query;
         var value = owner.Trim();
         return query.Where(x => x.Owner == value || x.Owner.StartsWith(value + " "));
-    }
-
-    private static List<T> FilterByOwner<T>(List<T> items, string? owner, Func<T, string> selector)
-    {
-        if (string.IsNullOrWhiteSpace(owner)) return items;
-        var normalizedOwner = Normalize(owner);
-        return items.Where(item =>
-        {
-            var itemOwner = Normalize(selector(item));
-            return itemOwner == normalizedOwner
-                || itemOwner.StartsWith(normalizedOwner + " ", StringComparison.Ordinal)
-                || normalizedOwner.StartsWith(itemOwner + " ", StringComparison.Ordinal);
-        }).ToList();
     }
 
     private static IReadOnlyList<Dictionary<string, string>> ReadWorksheet(Stream input)
