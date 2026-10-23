@@ -38,7 +38,7 @@ El navegador nunca accede directamente a Acumatica ni a SQL Server. El backend a
 | Frontend | Angular 20.3, TypeScript 5.9, RxJS 7.8, SCSS, Lucide |
 | Backend | ASP.NET Core 8, C#, Entity Framework Core 8 |
 | Datos | SQL Server / LocalDB |
-| Integración | REST API de Acumatica `24.200.001` |
+| Integración | REST API de Acumatica; versión configurable por ambiente |
 | Pruebas | Jasmine, Karma y Chrome |
 
 ## Estructura
@@ -112,6 +112,7 @@ Edita el nuevo `appsettings.Development.json` y reemplaza solamente los valores 
 | --- | --- |
 | `Acumatica:BaseUrl` | URL base privada de tu instancia, terminada en `/` |
 | `Acumatica:EndpointVersion` | Versión del endpoint publicado en tu ERP |
+| `Acumatica:PreferDefaultCaseEndpoint` | `true` consulta `Default/{EndpointVersion}/Case`; si el endpoint no responde, conserva el Generic Inquiry como respaldo |
 | `Acumatica:Company` | Tenant o compañía exacta de Acumatica |
 | `Acumatica:Branch` | Sucursal, o una cadena vacía si no aplica |
 | `OwnerId` / `OwnerName` | Déjalos vacíos; solo son respaldo si tu endpoint no identifica al usuario |

@@ -154,6 +154,19 @@ namespace ClandbusERPIntegration.Services
 
         public async Task<IReadOnlyList<JsonElement>> GetCasesAsync()
         {
+            if (_settings.PreferDefaultCaseEndpoint)
+            {
+                try
+                {
+                    return await GetDefaultCasesAsync(includeAllOwners: false);
+                }
+                catch (HttpRequestException)
+                {
+                    // Keep the published GI as a compatibility fallback while the
+                    // 26.200.001 contract is validated in each Acumatica tenant.
+                }
+            }
+
             var ownerId = CurrentOwnerId;
             if (string.IsNullOrWhiteSpace(ownerId)
                 && CurrentDisplayName.Equals(_settings.OwnerName, StringComparison.OrdinalIgnoreCase))
@@ -197,9 +210,26 @@ namespace ClandbusERPIntegration.Services
         {
             if (!_isLoggedIn) throw new InvalidOperationException("ERP session is not active.");
             var tenant = Uri.EscapeDataString(_settings.Company);
-            var cases = await GetAllRowsAsync(
-                $"t/{tenant}/api/odata/gi/CR-Cases2018R1",
-                useBasicAuthentication: true);
+            IReadOnlyList<JsonElement> cases;
+            if (_settings.PreferDefaultCaseEndpoint)
+            {
+                try
+                {
+                    cases = await GetDefaultCasesAsync(includeAllOwners: true);
+                }
+                catch (HttpRequestException)
+                {
+                    cases = await GetAllRowsAsync(
+                        $"t/{tenant}/api/odata/gi/CR-Cases2018R1",
+                        useBasicAuthentication: true);
+                }
+            }
+            else
+            {
+                cases = await GetAllRowsAsync(
+                    $"t/{tenant}/api/odata/gi/CR-Cases2018R1",
+                    useBasicAuthentication: true);
+            }
             var ownerNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (var mapping in _settings.OwnerMappings)
                 ownerNames[NormalizeIdentifier(mapping.Key)] = mapping.Value;
@@ -230,8 +260,67 @@ namespace ClandbusERPIntegration.Services
                 var ownerId = owner.HasValue ? NormalizeIdentifier(ScalarValue(owner.Value.Value)) : string.Empty;
                 var objectNode = JsonNode.Parse(row.GetRawText())?.AsObject();
                 if (objectNode is null) return row;
-                if (ownerNames.TryGetValue(ownerId, out var ownerName))
+                var endpointOwnerName = Value(row, "OwnerEmployeeName");
+                if (!string.IsNullOrWhiteSpace(endpointOwnerName))
+                    objectNode["OwnerDisplayName"] = endpointOwnerName;
+                else if (ownerNames.TryGetValue(ownerId, out var ownerName))
                     objectNode["OwnerDisplayName"] = ownerName;
+                return JsonSerializer.Deserialize<JsonElement>(objectNode.ToJsonString());
+            }).ToArray();
+        }
+
+        private async Task<IReadOnlyList<JsonElement>> GetDefaultCasesAsync(bool includeAllOwners)
+        {
+            const string fields = "CaseID,Subject,BusinessAccount,BusinessAccountName,ClassID,Status,Reason,Owner,OwnerEmployeeName,DateReported,LastIncomingActivity,LastOutgoingActivity,ClosingDate,LastModifiedDateTime,NoteID";
+            var endpoint = $"entity/Default/{_settings.EndpointVersion}/Case?$select={fields}";
+            IReadOnlyList<JsonElement> rows;
+
+            if (includeAllOwners)
+            {
+                rows = await GetAllRowsAsync(endpoint, useBasicAuthentication: false, pageSize: 500);
+            }
+            else
+            {
+                var collected = new List<JsonElement>();
+                foreach (var property in new[] { "Owner", "OwnerEmployeeName" })
+                {
+                    foreach (var owner in OwnerFilterValues())
+                    {
+                        try
+                        {
+                            var expression = $"{property} eq '{owner.Replace("'", "''")}'";
+                            var filter = Uri.EscapeDataString(expression);
+                            collected.AddRange(await GetAllRowsAsync(
+                                $"{endpoint}&$filter={filter}",
+                                useBasicAuthentication: false,
+                                pageSize: 500));
+                        }
+                        catch (HttpRequestException)
+                        {
+                            // Different Acumatica publications expose different
+                            // owner representations; try the next supported form.
+                        }
+                    }
+                }
+
+                if (collected.Count == 0)
+                {
+                    var allRows = await GetAllRowsAsync(endpoint, useBasicAuthentication: false, pageSize: 500);
+                    collected.AddRange(allRows.Where(IsCurrentOwner));
+                }
+
+                rows = collected
+                    .GroupBy(row => Value(row, "NoteID", "CaseID", "id"))
+                    .Select(group => group.First())
+                    .ToArray();
+            }
+
+            return rows.Select(row =>
+            {
+                var objectNode = JsonNode.Parse(row.GetRawText())?.AsObject();
+                if (objectNode is null) return row;
+                var ownerName = Value(row, "OwnerEmployeeName", "Owner");
+                if (!string.IsNullOrWhiteSpace(ownerName)) objectNode["OwnerDisplayName"] = ownerName;
                 return JsonSerializer.Deserialize<JsonElement>(objectNode.ToJsonString());
             }).ToArray();
         }
@@ -357,8 +446,19 @@ namespace ClandbusERPIntegration.Services
 
         private static string ScalarValue(JsonElement property)
         {
-            if (property.ValueKind == JsonValueKind.Object
-                && property.TryGetProperty("value", out var wrapped)) property = wrapped;
+            while (property.ValueKind == JsonValueKind.Object)
+            {
+                if (property.TryGetProperty("value", out var wrapped))
+                {
+                    property = wrapped;
+                    continue;
+                }
+                if (property.TryGetProperty("description", out var description))
+                    return description.GetString() ?? description.ToString();
+                if (property.TryGetProperty("id", out var id))
+                    return id.GetString() ?? id.ToString();
+                break;
+            }
             return property.ValueKind == JsonValueKind.String
                 ? property.GetString() ?? string.Empty
                 : property.ToString();
@@ -454,8 +554,7 @@ namespace ClandbusERPIntegration.Services
                     if (!match.HasValue) continue;
                     property = match.Value.Value;
                 }
-                if (property.ValueKind == JsonValueKind.Object && property.TryGetProperty("value", out var wrapped)) property = wrapped;
-                return property.ValueKind == JsonValueKind.String ? property.GetString() ?? string.Empty : property.ToString();
+                return ScalarValue(property);
             }
             return string.Empty;
         }

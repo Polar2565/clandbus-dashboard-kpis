@@ -66,7 +66,7 @@ public sealed class SynchronizationService(
     {
         CaseNumber = Value(row, "CRCase_caseCD", "CaseID", "CaseCD", "CaseNumber"),
         Subject = Value(row, "CRCase_subject", "Subject"),
-        Customer = Value(row, "BAccount_acctName", "BusinessAccount", "Customer"),
+        Customer = Value(row, "BAccount_acctName", "BusinessAccountName", "BusinessAccount", "Customer"),
         Category = Value(row, "CRCase_caseClassID", "ClassID", "CaseClass", "Category"),
         Status = Value(row, "CRCase_status", "Status"),
         Reason = Value(row, "CRCase_resolution", "Reason", "Resolution"),
@@ -107,8 +107,19 @@ public sealed class SynchronizationService(
                 if (!match.HasValue) continue;
                 property = match.Value.Value;
             }
-            if (property.ValueKind == JsonValueKind.Object
-                && property.TryGetProperty("value", out var wrapped)) property = wrapped;
+            while (property.ValueKind == JsonValueKind.Object)
+            {
+                if (property.TryGetProperty("value", out var wrapped))
+                {
+                    property = wrapped;
+                    continue;
+                }
+                if (property.TryGetProperty("description", out var description))
+                    return description.GetString() ?? description.ToString();
+                if (property.TryGetProperty("id", out var id))
+                    return id.GetString() ?? id.ToString();
+                break;
+            }
             return property.ValueKind == JsonValueKind.String
                 ? property.GetString() ?? string.Empty : property.ToString();
         }
