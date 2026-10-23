@@ -230,9 +230,3 @@ La suite actual contiene 9 pruebas Angular. La sincronización real requiere una
 - [GitHub Polar2565](https://github.com/Polar2565/clandbus-dashboard-kpis): repositorio remoto original y espejo del desarrollo.
 
 Ambos remotos deben conservar el mismo historial. En la copia de trabajo de Javier, `origin` apunta a GitHub y `gitlab` apunta a GitLab. El proyecto es independiente y no modifica integraciones ni repositorios anteriores.
-
----
-
-© 2026 Javier Solís. Todos los derechos reservados.
-
-El código fuente puede consultarse públicamente, pero no se autoriza su copia, modificación, distribución, sublicenciamiento ni uso comercial sin autorización previa y por escrito del titular. Consulta [LICENSE](LICENSE) para conocer los términos completos.
