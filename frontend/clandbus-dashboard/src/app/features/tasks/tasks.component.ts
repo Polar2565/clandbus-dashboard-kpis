@@ -12,11 +12,57 @@ import { categoryVisual } from '../../core/utils/category.utils';
 export class TasksComponent {
   readonly data = inject(DashboardDataService);
   readonly tasks$ = this.data.tasks$;
+  importing = false;
+  importMessage = '';
+  importError = false;
   showOverdueOnly = false;
   overdueModalTasks: any[] = [];
   selectedTask: any = null;
   period: 'day' | 'week' | 'month' | 'year' | 'history' = 'week';
   readonly categoryVisual = categoryVisual;
+
+  selectExcel(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.importing = true;
+    this.importMessage = '';
+    this.importError = false;
+    this.data.importTasks(file).subscribe({
+      next: (result) => {
+        this.data.applyTaskImport(result);
+        this.importing = false;
+        this.importMessage = `${result.result?.imported ?? 0} tareas importadas desde ${file.name}.`;
+        input.value = '';
+      },
+      error: (error) => {
+        this.importing = false;
+        this.importError = true;
+        this.importMessage = error?.error?.message || 'No fue posible importar el Excel.';
+        this.data.loading$.next(false);
+        input.value = '';
+      },
+    });
+  }
+
+  importLatest() {
+    this.importing = true;
+    this.importMessage = '';
+    this.importError = false;
+    this.data.importLatestTasks().subscribe({
+      next: (result) => {
+        this.data.applyTaskImport(result);
+        this.importing = false;
+        this.importMessage = `${result.result?.imported ?? 0} tareas importadas desde la carpeta local.`;
+      },
+      error: (error) => {
+        this.importing = false;
+        this.importError = true;
+        this.importMessage = error?.error?.message || 'No fue posible leer la carpeta de importación.';
+        this.data.loading$.next(false);
+      },
+    });
+  }
 
   overdue(t: any) {
     return (

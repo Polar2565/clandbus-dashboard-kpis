@@ -6,7 +6,7 @@ Cliente Angular 20 del tablero personal de soporte. Consume la API C# y nunca se
 
 - `/resumen`: carga activa, pendientes, vencidas, categorías y prioridades.
 - `/casos`: periodos, KPIs, estados, búsqueda, actividad de correo y paginación de 5, 10, 25 o todos los registros.
-- `/tasks`: KPIs, categorías, tareas vencidas y detalle.
+- `/tasks`: KPIs, categorías, tareas vencidas, detalle e importación Excel de respaldo.
 - `/productividad`: análisis, bitácora, reporte y rango personalizado.
 - Selector superior global: cambia Resumen, Casos, Tareas y Productividad al propietario elegido.
 - `/integracion`: sesión Acumatica, última captura y flujo de datos.

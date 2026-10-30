@@ -7,6 +7,7 @@ API ASP.NET Core 8 que autentica contra Acumatica, mantiene sesiones aisladas po
 - Login, perfil y logout de Acumatica.
 - Cookie local HTTP-only y cliente REST independiente por sesión.
 - Sincronización directa de casos, tareas e integrantes desde Acumatica.
+- Importación Excel de tareas como respaldo manual cuando `Task` no entrega cambios recientes.
 - Persistencia por `UserKey` y bitácora profesional.
 - Resumen, tendencias y productividad.
 - Consolidado ejecutivo del equipo protegido por lista de usuarios autorizados.
@@ -45,6 +46,9 @@ Agrega en `TeamDashboard:ExecutiveUsers` los usuarios o nombres exactos de Acuma
 | GET | `/api/Acumatica/me` | Usuario actual |
 | POST | `/api/Acumatica/logout` | Cierra sesión |
 | POST | `/api/Dashboard/sync` | Sincroniza Acumatica |
+| POST | `/api/Dashboard/import-tasks` | Importa un `.xlsx` de tareas |
+| POST | `/api/Dashboard/import-latest-tasks` | Importa el último `.xlsx` de la carpeta local |
+| GET | `/api/Dashboard/task-import-folder` | Devuelve la carpeta local de respaldo |
 | GET | `/api/Dashboard/summary` | KPIs personales |
 | GET | `/api/Dashboard/view` | Entrega resumen, casos y tareas en una sola respuesta |
 | GET | `/api/Dashboard/cases` | Casos personales |

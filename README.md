@@ -10,6 +10,7 @@ Aplicación web independiente para consultar y analizar el trabajo personal y co
 - Sesiones aisladas por navegador mediante cookie HTTP-only.
 - Sincronización de casos asociados al usuario autenticado.
 - Sincronización directa de casos, tareas e integrantes mediante endpoints REST de Acumatica.
+- Importación de tareas desde Excel como respaldo cuando el endpoint `Task` no publica información reciente.
 - Filtros por día, semana, mes, trimestre, año, histórico y rango personalizado.
 - KPIs interactivos con el detalle de los registros que los componen.
 - Distribución de casos por estado y tareas por categoría.
@@ -164,8 +165,9 @@ Abre `http://127.0.0.1:4200`. La API queda en `https://localhost:7004`, Swagger 
 
 1. Abre `http://127.0.0.1:4200` e inicia sesión con una cuenta autorizada de Acumatica.
 2. En **Integración**, pulsa **Sincronizar ahora** para obtener casos y tareas desde Acumatica.
-3. Comprueba que Resumen, Casos, Tareas y Productividad tengan información.
-4. Si aparecen ceros, verifica los permisos de `Case`, `Task` y `Employee`, el tenant, los propietarios y la versión del endpoint.
+3. Si `Task` no contiene cambios recientes, abre **Tareas** y carga el `.xlsx` exportado desde Acumatica; también puedes copiarlo a `App_Data/TaskImports` y usar **Usar último Excel**.
+4. Comprueba que Resumen, Casos, Tareas y Productividad tengan información.
+5. Si aparecen ceros, verifica los permisos de `Case`, `Task` y `Employee`, el tenant, los propietarios y la versión del endpoint.
 
 ## Pruebas
 

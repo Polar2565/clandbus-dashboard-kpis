@@ -5,8 +5,18 @@
     <p>Migraciones, desarrollo, soporte y actividades ligadas a cada caso.</p>
   </div>
   <div class="import-area">
-    <button type="button" (click)="data.sync()">Sincronizar tareas</button
-    ><small>Consulta directamente el endpoint de Acumatica.</small>
+    <div class="import-actions">
+      <button type="button" (click)="data.sync()" [disabled]="importing">Sincronizar Acumatica</button>
+      <label [class.disabled]="importing">
+        {{ importing ? 'Importando…' : 'Importar Excel' }}
+        <input type="file" accept=".xlsx" (change)="selectExcel($event)" [disabled]="importing" />
+      </label>
+      <button type="button" class="secondary" (click)="importLatest()" [disabled]="importing">
+        Usar último Excel
+      </button>
+    </div>
+    <small>Acumatica es la fuente principal; Excel funciona como respaldo.</small>
+    <small *ngIf="importMessage" [class.error]="importError">{{ importMessage }}</small>
   </div>
 </section>
 <section class="task-controls">
