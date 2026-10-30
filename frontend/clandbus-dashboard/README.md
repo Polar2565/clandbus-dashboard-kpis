@@ -49,4 +49,4 @@ Casos usa la actividad más reciente entre creación, correo recibido y respuest
 
 ## Pruebas y consideraciones
 
-La suite actual contiene 9 pruebas. Valida además navegación responsive, modales de pantalla completa, filtros, paginación, cambio rápido entre varios propietarios, estados vacíos y logout. No coloques secretos en TypeScript. “Excel” produce CSV UTF-8 y PDF usa `window.print()`.
+La suite actual contiene 12 pruebas. Valida además navegación responsive, modales de pantalla completa, filtros, paginación, cambio rápido entre varios propietarios, estados vacíos y logout. No coloques secretos en TypeScript. “Excel” produce CSV UTF-8 y PDF usa `window.print()`.

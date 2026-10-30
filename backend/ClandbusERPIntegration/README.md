@@ -43,9 +43,6 @@ Agrega en `TeamDashboard:ExecutiveUsers` los usuarios o nombres exactos de Acuma
 | GET | `/api/Health` | Salud |
 | POST | `/api/Acumatica/login` | Inicia sesión |
 | GET | `/api/Acumatica/me` | Usuario actual |
-| GET | `/api/Acumatica/orders` | Órdenes heredadas |
-| POST | `/api/Acumatica/update-order` | Actualiza descripción |
-| POST | `/api/Acumatica/remove-hold` | Retira Hold |
 | POST | `/api/Acumatica/logout` | Cierra sesión |
 | POST | `/api/Dashboard/sync` | Sincroniza Acumatica |
 | GET | `/api/Dashboard/summary` | KPIs personales |

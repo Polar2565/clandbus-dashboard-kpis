@@ -175,7 +175,7 @@ npm --prefix frontend\clandbus-dashboard run build
 npm --prefix frontend\clandbus-dashboard test -- --watch=false
 ```
 
-La suite actual contiene 9 pruebas Angular. La sincronización real requiere una sesión autorizada.
+La suite actual contiene 12 pruebas Angular. La sincronización real requiere una sesión autorizada.
 
 ## Verificación manual
 

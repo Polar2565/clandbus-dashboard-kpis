@@ -8,9 +8,8 @@ import {
   providedIn: 'root'
 })
 export class AcumaticaService {
-
-  private apiUrl =
-    'https://localhost:7004/api/Acumatica';
+  private readonly apiBaseUrl = 'https://localhost:7004/api';
+  private readonly apiUrl = `${this.apiBaseUrl}/Acumatica`;
 
   constructor(
     private http: HttpClient
@@ -28,48 +27,17 @@ export class AcumaticaService {
     );
   }
 
-  getOrders() {
-
-    return this.http.get(
-      `${this.apiUrl}/orders`,
-      {
-        withCredentials: true
-      }
-    );
-  }
-
   synchronize() {
     return this.http.post(
-      'https://localhost:7004/api/Dashboard/sync',
+      `${this.apiBaseUrl}/Dashboard/sync`,
       {},
       { withCredentials: true }
     );
   }
 
-  getSummary(owner = '') {
-    return this.http.get(
-      'https://localhost:7004/api/Dashboard/summary',
-      { withCredentials: true, params: owner ? { owner } : {} }
-    );
-  }
-
   getDashboardView(owner = '') {
     return this.http.get<any>(
-      'https://localhost:7004/api/Dashboard/view',
-      { withCredentials: true, params: owner ? { owner } : {} }
-    );
-  }
-
-  getCases(owner = '') {
-    return this.http.get(
-      'https://localhost:7004/api/Dashboard/cases',
-      { withCredentials: true, params: owner ? { owner } : {} }
-    );
-  }
-
-  getTasks(owner = '') {
-    return this.http.get(
-      'https://localhost:7004/api/Dashboard/tasks',
+      `${this.apiBaseUrl}/Dashboard/view`,
       { withCredentials: true, params: owner ? { owner } : {} }
     );
   }
@@ -78,46 +46,17 @@ export class AcumaticaService {
     return this.http.get<any>(`${this.apiUrl}/me`, { withCredentials: true });
   }
 
-  getTrends(period: 'week' | 'month', owner = '') {
-    return this.http.get<any[]>('https://localhost:7004/api/Dashboard/trends', {
-      withCredentials: true,
-      params: owner ? { period, owner } : { period }
-    });
-  }
-
   getTeamAccess() {
     return this.http.get<{ canViewTeam: boolean }>(
-      'https://localhost:7004/api/team-dashboard/access',
+      `${this.apiBaseUrl}/team-dashboard/access`,
       { withCredentials: true }
     );
   }
 
   getTeamOwners() {
     return this.http.get<string[]>(
-      'https://localhost:7004/api/team-dashboard/owners',
+      `${this.apiBaseUrl}/team-dashboard/owners`,
       { withCredentials: true }
-    );
-  }
-
-  updateOrder(payload: any) {
-
-    return this.http.post(
-      `${this.apiUrl}/update-order`,
-      payload,
-      {
-        withCredentials: true
-      }
-    );
-  }
-
-  removeHold(payload: any) {
-
-    return this.http.post(
-      `${this.apiUrl}/remove-hold`,
-      payload,
-      {
-        withCredentials: true
-      }
     );
   }
 
